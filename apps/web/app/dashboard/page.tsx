@@ -1,35 +1,10 @@
 import Link from "next/link";
 import TaskForm from "@/components/task-form";
+import CopilotSmokeButton from "@/components/copilot-smoke-button";
 import { auth, signOut } from "@/lib/auth";
-
-type RunResponse = {
-  run_id: string;
-  status: string;
-  title: string;
-  goal: string;
-  constraints: string[];
-  plan?: string[];
-  artifacts?: Record<string, unknown>;
-  attempts?: Record<string, unknown>;
-};
-
-async function getRuns(): Promise<RunResponse[]> {
-  try {
-    const baseUrl = process.env.API_BASE_URL || "http://api:8000";
-
-    const res = await fetch(`${baseUrl}/swarm/runs`, {
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      return [];
-    }
-
-    return (await res.json()) as RunResponse[];
-  } catch {
-    return [];
-  }
-}
+import { listRuns } from "@/lib/run-store";
+import { getAiSettings } from "@/lib/ai-settings";
+import SignInButton from "@/components/sign-in-button";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -40,31 +15,15 @@ export default async function DashboardPage() {
       <main style={{ display: "grid", gap: 24 }}>
         <h2>Dashboard</h2>
         <p>GitHub sign-in is required before using the dashboard.</p>
-
-        <a
-          href="/api/auth/signin/github"
-          style={{
-            display: "inline-block",
-            width: "fit-content",
-            padding: "10px 16px",
-            background: "#1d4ed8",
-            color: "#fff",
-            borderRadius: 9999,
-            textDecoration: "none",
-            fontWeight: 600,
-          }}
-        >
-          Sign in with GitHub
-        </a>
-
+        <SignInButton callbackUrl="/dashboard" />
         <Link href="/">Back to home</Link>
       </main>
     );
   }
 
-  const runs = await getRuns();
-  const copilotEnabled = process.env.COPILOT_ENABLED === "1";
+  const runs = await listRuns();
   const label = user.login || user.name || user.email || user.id;
+  const ai = getAiSettings();
 
   return (
     <main style={{ display: "grid", gap: 24 }}>
@@ -75,13 +34,17 @@ export default async function DashboardPage() {
           Signed in as <strong>{label}</strong>
         </p>
 
+        <p>
+          AI provider: <strong>{ai.provider}</strong>
+        </p>
+
         <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <Link href="/">Back home</Link>
 
           <form
             action={async () => {
               "use server";
-              await signOut();
+              await signOut({ redirectTo: "/" });
             }}
           >
             <button type="submit">Sign out</button>
@@ -90,17 +53,13 @@ export default async function DashboardPage() {
       </section>
 
       <section>
-        <h3>Create run</h3>
-        <TaskForm />
+        <h3>Copilot smoke test</h3>
+        <CopilotSmokeButton />
       </section>
 
       <section>
-        <h3>Copilot integration</h3>
-        <p>{copilotEnabled ? "Enabled in environment" : "Disabled in environment"}</p>
-        <p>
-          This starter expects server-side Copilot calls using the signed-in
-          user&apos;s GitHub token.
-        </p>
+        <h3>Create run</h3>
+        <TaskForm />
       </section>
 
       <section>
@@ -113,7 +72,7 @@ export default async function DashboardPage() {
               overflowX: "auto",
               background: "#111",
               color: "#eee",
-              padding: 16,
+              padding: 16
             }}
           >
             {JSON.stringify(runs, null, 2)}

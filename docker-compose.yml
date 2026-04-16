@@ -1,4 +1,3 @@
-version: '3.9'
 services:
   api:
     build: ./apps/api
@@ -21,5 +20,20 @@ services:
     volumes:
       - ./apps/web:/app
       - /app/node_modules
-    depends_on:
-      - api
+      - ./data:/app/data
+    environment:
+      - CLI_URL=127.0.0.1:4321
+
+  copilot-cli:
+    build: ./apps/copilot-cli
+    env_file:
+      - .env
+    environment:
+      - COPILOT_GITHUB_TOKEN=${COPILOT_GITHUB_TOKEN}
+    network_mode: "service:web"
+    restart: "no"
+    volumes:
+      - copilot-session-data:/root/.copilot/session-state
+
+volumes:
+  copilot-session-data:

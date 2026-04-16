@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 from uuid import uuid4
+
 from app.config import get_settings
 from app.models.schemas import TaskRequest, RunState
-
 
 GENERIC_SUCCESS_CRITERIA = [
     "Output addresses the stated goal directly",
@@ -32,7 +32,7 @@ def load_run(run_id: str) -> RunState:
 def list_runs() -> list[RunState]:
     items: list[RunState] = []
     for file in sorted(_runs_dir().glob("*.json"), reverse=True):
-        items.append(RunState.model_validate_json(file.read_text(encoding="utf-8")))
+      items.append(RunState.model_validate_json(file.read_text(encoding="utf-8")))
     return items
 
 
@@ -62,7 +62,7 @@ def _orchestrator_artifact(task: TaskRequest, constraints: list[str]) -> dict:
             "orchestrator",
             "builder",
             "critic",
-            *( ["marketer"] if task.require_marketing else [] ),
+            *(["marketer"] if task.require_marketing else []),
             "validator",
         ],
     }
@@ -77,10 +77,7 @@ def _builder_artifact(task: TaskRequest, constraints: list[str]) -> dict:
         checks.append(f"Track explicit constraints: {', '.join(constraints)}")
 
     sections = [
-        {
-            "heading": "Objective",
-            "content": task.goal,
-        },
+        {"heading": "Objective", "content": task.goal},
         {
             "heading": "Proposed approach",
             "content": (
@@ -88,10 +85,7 @@ def _builder_artifact(task: TaskRequest, constraints: list[str]) -> dict:
                 "and a validator decision instead of an unbounded free-form swarm."
             ),
         },
-        {
-            "heading": "Execution checks",
-            "content": checks,
-        },
+        {"heading": "Execution checks", "content": checks},
     ]
     return {
         "summary": "Initial draft artifact created by the builder.",
@@ -187,7 +181,60 @@ def _validator_artifact(task: TaskRequest, critic_artifact: dict, repair_artifac
     }
 
 
-def run_swarm(task: TaskRequest) -> RunState:
+def _llm_run_swarm(task: TaskRequest) -> RunState:
+    from app.services.openai_swarm import (
+        build_builder_artifact,
+        build_critic_artifact,
+        build_orchestrator_artifact,
+        build_validator_artifact,
+    )
+
+    constraints = _normalize_constraints(task.constraints)
+
+    run = RunState(
+        run_id=str(uuid4()),
+        status="running",
+        title=task.title,
+        goal=task.goal,
+        constraints=constraints,
+    )
+    save_run(run)
+
+    orchestrator = build_orchestrator_artifact(task, constraints)
+    run.plan = orchestrator.get("plan", [])
+    run.artifacts["orchestrator"] = orchestrator
+
+    builder = build_builder_artifact(task, constraints, orchestrator)
+    run.artifacts["build"] = builder
+
+    critic = build_critic_artifact(task, constraints, builder)
+    run.artifacts["critic"] = critic
+
+    repair = None
+    if critic.get("blockers") or critic.get("major_issues"):
+        run.attempts["repair"] = 1
+        repair = _repair_artifact(critic)
+        run.artifacts["repair"] = repair
+
+    if task.require_marketing:
+        run.artifacts["marketing"] = _marketing_artifact(task)
+
+    validator = build_validator_artifact(task, constraints, orchestrator, builder, critic, repair)
+    run.artifacts["validator"] = validator
+
+    decision = validator.get("decision")
+    if decision == "fail":
+        run.status = "failed"
+    elif decision == "needs_approval":
+        run.status = "needs_approval"
+    else:
+        run.status = "passed"
+
+    save_run(run)
+    return run
+
+
+def _deterministic_run_swarm(task: TaskRequest) -> RunState:
     constraints = _normalize_constraints(task.constraints)
 
     run = RunState(
@@ -223,3 +270,21 @@ def run_swarm(task: TaskRequest) -> RunState:
     run.status = status
     save_run(run)
     return run
+
+
+def run_swarm(task: TaskRequest) -> RunState:
+    settings = get_settings()
+
+    if settings.openai_api_key:
+        try:
+            return _llm_run_swarm(task)
+        except Exception as exc:
+            run = _deterministic_run_swarm(task)
+            run.artifacts["llm_error"] = {
+                "summary": "Fell back to deterministic execution because model-backed execution failed.",
+                "detail": str(exc),
+            }
+            save_run(run)
+            return run
+
+    return _deterministic_run_swarm(task)

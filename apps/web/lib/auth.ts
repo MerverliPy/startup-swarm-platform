@@ -1,98 +1,76 @@
 import GitHub from "next-auth/providers/github";
 import NextAuth from "next-auth";
 
-const apiBaseUrl = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL;
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: "jwt"
+  },
   providers: [
     GitHub({
       clientId: process.env.GITHUB_ID!,
       clientSecret: process.env.GITHUB_SECRET!,
       authorization: {
         params: {
-          scope: "read:user user:email",
-        },
-      },
-    }),
+          scope: "read:user user:email"
+        }
+      }
+    })
   ],
   callbacks: {
-    async jwt({ token, profile }) {
+    async jwt({ token, profile, account }) {
       if (profile && "id" in profile) {
         token.providerUserId = String(profile.id);
       }
+
       if (profile && "login" in profile) {
         token.githubLogin = String((profile as { login?: string }).login ?? "");
       }
+
+      if (account?.access_token) {
+        token.githubAccessToken = String(account.access_token);
+      }
+
       return token;
     },
     async session({ session, token }) {
       session.user = {
         ...session.user,
         id: (token.providerUserId as string | undefined) ?? token.sub,
-        login: token.githubLogin as string | undefined,
+        login: token.githubLogin as string | undefined
       };
+      session.githubAccessToken = token.githubAccessToken as string | undefined;
       return session;
-    },
-  },
+    }
+  }
 });
 
-export type PlatformIdentity = {
-  provider: "github";
-  providerUserId: string;
-  login: string;
-  avatarUrl?: string | null;
-  name?: string | null;
-};
-
-export async function getPlatformIdentity(): Promise<PlatformIdentity | null> {
+export async function getGitHubAccessToken(): Promise<string | null> {
   const session = await auth();
-  const user = session?.user;
-
-  if (!user?.id || !user.login) {
-    return null;
-  }
-
-  return {
-    provider: "github",
-    providerUserId: user.id,
-    login: user.login,
-    avatarUrl: user.image,
-    name: user.name,
-  };
+  return session?.githubAccessToken ?? null;
 }
 
-export async function exchangePlatformSession(): Promise<string | null> {
-  const identity = await getPlatformIdentity();
-  if (!identity || !apiBaseUrl) {
-    return null;
-  }
+export async function getSafeSessionDebug() {
+  const session = await auth();
 
-  const internalKey = process.env.PLATFORM_INTERNAL_API_KEY;
-  if (!internalKey) {
-    throw new Error("PLATFORM_INTERNAL_API_KEY is not configured");
-  }
-
-  const response = await fetch(`${apiBaseUrl}/auth/session/exchange`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-platform-internal-key": internalKey,
-    },
-    body: JSON.stringify(identity),
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to exchange platform session: ${response.status}`);
-  }
-
-  const data = (await response.json()) as { access_token?: string };
-  return data.access_token ?? null;
+  return {
+    authenticated: Boolean(session?.user?.id),
+    user: session?.user
+      ? {
+          id: session.user.id ?? null,
+          login: session.user.login ?? null,
+          name: session.user.name ?? null,
+          email: session.user.email ?? null
+        }
+      : null,
+    hasGithubAccessToken: Boolean(session?.githubAccessToken)
+  };
 }
 
 declare module "next-auth" {
   interface Session {
+    githubAccessToken?: string;
     user: {
       id?: string;
       login?: string;
@@ -107,5 +85,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     providerUserId?: string;
     githubLogin?: string;
+    githubAccessToken?: string;
   }
 }

@@ -28,22 +28,16 @@ export default function TaskForm() {
     setResult(null);
 
     try {
-      const baseUrl =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://100.81.83.98:8000";
-
-      const response = await fetch(`${baseUrl}/swarm/runs`, {
+      const response = await fetch("/api/swarm/runs", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           title,
           goal,
-          constraints: constraints
-            .split(",")
-            .map((x) => x.trim())
-            .filter(Boolean),
-        }),
+          constraints: constraints.split(",").map((x) => x.trim()).filter(Boolean)
+        })
       });
 
       if (!response.ok) {
@@ -60,10 +54,7 @@ export default function TaskForm() {
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      style={{ display: "grid", gap: 12, maxWidth: 720 }}
-    >
+    <form onSubmit={onSubmit} style={{ display: "grid", gap: 12, maxWidth: 720 }}>
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -95,7 +86,7 @@ export default function TaskForm() {
             overflowX: "auto",
             background: "#111",
             color: "#eee",
-            padding: 16,
+            padding: 16
           }}
         >
           {JSON.stringify(result, null, 2)}

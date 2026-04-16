@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
+import SignInButton from "@/components/sign-in-button";
 
 export default async function AuthStatus() {
   const session = await auth();
@@ -9,21 +10,7 @@ export default async function AuthStatus() {
     return (
       <section style={{ display: "grid", gap: 12, marginTop: 24 }}>
         <p>You are not signed in.</p>
-        <a
-          href="/api/auth/signin/github"
-          style={{
-            display: "inline-block",
-            width: "fit-content",
-            padding: "10px 16px",
-            background: "#1d4ed8",
-            color: "#fff",
-            borderRadius: 9999,
-            textDecoration: "none",
-            fontWeight: 600,
-          }}
-        >
-          Sign in with GitHub
-        </a>
+        <SignInButton callbackUrl="/dashboard" />
       </section>
     );
   }
@@ -42,7 +29,7 @@ export default async function AuthStatus() {
         <form
           action={async () => {
             "use server";
-            await signOut();
+            await signOut({ redirectTo: "/" });
           }}
         >
           <button type="submit">Sign out</button>
