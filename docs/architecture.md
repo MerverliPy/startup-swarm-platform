@@ -1,0 +1,66 @@
+# Architecture
+
+## Overview
+
+This platform is split into two product-facing concerns:
+
+1. **Swarm execution**
+   - handled by `apps/api`
+   - runs the orchestrator and specialist agents
+   - stores run state and artifacts
+
+2. **End-user product UX**
+   - handled by `apps/web`
+   - GitHub login
+   - task creation and run views
+   - optional Copilot-powered interactions
+
+## Why this split exists
+
+The swarm backend and the end-user SaaS surface have different operational needs:
+- Python is practical for the OpenAI Agents SDK workflow layer.
+- Next.js is practical for GitHub sign-in, product UI, and Copilot SDK integration.
+
+## Request flow
+
+```text
+Browser
+  -> Next.js app
+  -> FastAPI API
+  -> OpenAI-powered swarm execution
+  -> run state persisted to /runs (starter)
+```
+
+## Authentication flow
+
+### GitHub sign-in
+- web app signs users in with GitHub OAuth
+- token may be stored in session/JWT
+- token can be exchanged or forwarded to backend if needed
+
+### GitHub repository access
+Recommended upgrade path:
+- use a **GitHub App** for repo-scoped installs, webhooks, and org-safe automation
+- continue using GitHub OAuth or GitHub App user tokens for user attribution
+
+### Copilot access
+- Copilot access is user-based
+- the product can call Copilot on behalf of the user if you pass their GitHub token to the Copilot SDK server-side
+
+## Storage
+
+Starter implementation:
+- local JSON files in `/runs`
+
+Production recommendation:
+- Postgres for users, projects, runs, artifacts, approvals
+- Redis for queueing and short-lived execution state
+- object storage for large artifacts
+
+## Reliability controls
+
+- bounded critique/repair loop
+- typed role outputs
+- deterministic stage order
+- explicit success criteria
+- approval-gated side effects

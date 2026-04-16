@@ -1,0 +1,25 @@
+version: '3.9'
+services:
+  api:
+    build: ./apps/api
+    env_file:
+      - .env
+      - ./apps/api/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./apps/api:/app
+      - ./runs:/runs
+
+  web:
+    build: ./apps/web
+    env_file:
+      - .env
+      - ./apps/web/.env.local
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+    depends_on:
+      - api
