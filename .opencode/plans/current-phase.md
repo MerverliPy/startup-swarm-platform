@@ -71,13 +71,20 @@ Revert the web swarm route handlers, route wiring, persistence-source selection,
 
 ## Validation
 
-Status: pending
+Status: PASS
 Evidence:
-- not run yet
+- internal workflow validation: `bash scripts/dev/workflow-check.sh` -> PASS
+- product validation: `python -m compileall apps/api/app` -> PASS
+- product validation: `(cd apps/web && npm run build)` -> PASS
+- `apps/web/components/task-form.tsx` and `apps/web/app/dashboard/page.tsx` now use the shared `apps/web/lib/api.ts` path through `/api/swarm/runs`
+- `apps/web/app/api/swarm/runs/route.ts` and `apps/web/app/api/swarm/runs/[run_id]/route.ts` exist in the working tree, and `.gitignore` now explicitly unignores them
+- `apps/api/app/services/swarm.py` sorts runs by `created_at`, and `apps/web/lib/run-store.ts` is reduced to a compatibility shim
+- `apps/web/lib/auth.ts` now satisfies the web build type checks via explicit session user id narrowing, and `apps/web/types/next-auth.d.ts` holds the NextAuth/Auth.js module augmentation
+- `README.md`, `docs/architecture.md`, and `docker-compose.yml` now describe the same canonical route path and web port usage for this phase
 Blockers:
-- not validated yet
+- none
 Ready to ship:
-- no
+- yes
 
 ## Acceptance criteria
 

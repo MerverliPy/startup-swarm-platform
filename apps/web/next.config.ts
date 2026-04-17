@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  distDir: ".next-local",
   allowedDevOrigins: [
     "http://100.81.83.98:3001",
     "http://localhost:3001"

@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field
+from datetime import datetime, timezone
 from typing import List, Literal
+
+from pydantic import BaseModel, Field
 
 
 class UserProfile(BaseModel):
@@ -34,3 +36,4 @@ class RunState(BaseModel):
     plan: List[str] = Field(default_factory=list)
     artifacts: dict = Field(default_factory=dict)
     attempts: dict = Field(default_factory=lambda: {"repair": 0})
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

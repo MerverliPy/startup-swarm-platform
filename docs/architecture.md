@@ -26,10 +26,15 @@ The swarm backend and the end-user SaaS surface have different operational needs
 ```text
 Browser
   -> Next.js app
-  -> FastAPI API
+  -> Next.js route handlers at /api/swarm/runs
+  -> FastAPI API at /swarm/runs
   -> OpenAI-powered swarm execution
-  -> run state persisted to /runs (starter)
+  -> run state persisted by apps/api in /runs (starter)
 ```
+
+The web dashboard and create-run flow share the same API-backed persistence source. The
+Next.js layer acts as the canonical web-facing entrypoint and proxies run requests to the
+backend API instead of maintaining a second local run store.
 
 ## Authentication flow
 
@@ -50,7 +55,9 @@ Recommended upgrade path:
 ## Storage
 
 Starter implementation:
-- local JSON files in `/runs`
+- local JSON files in `/runs`, written and read by `apps/api`
+
+Web-side compatibility helpers must not become an authoritative persistence layer.
 
 Production recommendation:
 - Postgres for users, projects, runs, artifacts, approvals

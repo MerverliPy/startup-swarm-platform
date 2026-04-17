@@ -2,7 +2,7 @@ import Link from "next/link";
 import TaskForm from "@/components/task-form";
 import CopilotSmokeButton from "@/components/copilot-smoke-button";
 import { auth, signOut } from "@/lib/auth";
-import { listRuns } from "@/lib/run-store";
+import { listSwarmRuns } from "@/lib/api";
 import { getAiSettings } from "@/lib/ai-settings";
 import SignInButton from "@/components/sign-in-button";
 
@@ -21,7 +21,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const runs = await listRuns();
+  const runs = await listSwarmRuns();
   const label = user.login || user.name || user.email || user.id;
   const ai = getAiSettings();
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
@@ -24,16 +26,23 @@ def save_run(run: RunState) -> None:
     target.write_text(run.model_dump_json(indent=2), encoding="utf-8")
 
 
+def _read_run(target: Path) -> RunState:
+    payload = json.loads(target.read_text(encoding="utf-8"))
+    if "created_at" not in payload:
+        payload["created_at"] = datetime.fromtimestamp(
+            target.stat().st_mtime, tz=timezone.utc
+        ).isoformat()
+    return RunState.model_validate(payload)
+
+
 def load_run(run_id: str) -> RunState:
     target = _runs_dir() / f"{run_id}.json"
-    return RunState.model_validate_json(target.read_text(encoding="utf-8"))
+    return _read_run(target)
 
 
 def list_runs() -> list[RunState]:
-    items: list[RunState] = []
-    for file in sorted(_runs_dir().glob("*.json"), reverse=True):
-      items.append(RunState.model_validate_json(file.read_text(encoding="utf-8")))
-    return items
+    items = [_read_run(file) for file in _runs_dir().glob("*.json")]
+    return sorted(items, key=lambda run: run.created_at, reverse=True)
 
 
 def _normalize_constraints(constraints: list[str]) -> list[str]:

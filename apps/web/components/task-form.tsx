@@ -2,22 +2,13 @@
 
 import { useState } from "react";
 
-type RunResponse = {
-  run_id: string;
-  status: string;
-  title: string;
-  goal: string;
-  constraints: string[];
-  plan?: string[];
-  artifacts?: Record<string, unknown>;
-  attempts?: Record<string, unknown>;
-};
+import { createSwarmRun, type SwarmRun } from "@/lib/api";
 
 export default function TaskForm() {
   const [title, setTitle] = useState("");
   const [goal, setGoal] = useState("");
   const [constraints, setConstraints] = useState("production_ready");
-  const [result, setResult] = useState<RunResponse | null>(null);
+  const [result, setResult] = useState<SwarmRun | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,23 +19,11 @@ export default function TaskForm() {
     setResult(null);
 
     try {
-      const response = await fetch("/api/swarm/runs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          title,
-          goal,
-          constraints: constraints.split(",").map((x) => x.trim()).filter(Boolean)
-        })
+      const run = await createSwarmRun({
+        title,
+        goal,
+        constraints: constraints.split(",").map((x) => x.trim()).filter(Boolean)
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to create run: ${response.status}`);
-      }
-
-      const run = (await response.json()) as RunResponse;
       setResult(run);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");

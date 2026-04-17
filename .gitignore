@@ -8,6 +8,8 @@ __pycache__/
 # Node
 node_modules/
 .next/
+.next-local/
+.next-local-root-owned/
 out/
 
 # Env
@@ -22,4 +24,8 @@ apps/web/.env.local
 
 # Runtime data
 runs/
+!apps/web/app/api/swarm/runs/
+!apps/web/app/api/swarm/runs/route.ts
+!apps/web/app/api/swarm/runs/[run_id]/
+!apps/web/app/api/swarm/runs/[run_id]/route.ts
 coverage/

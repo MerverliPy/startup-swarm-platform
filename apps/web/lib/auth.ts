@@ -35,9 +35,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     async session({ session, token }) {
+      const userId =
+        typeof token.providerUserId === "string"
+          ? token.providerUserId
+          : typeof token.sub === "string"
+            ? token.sub
+            : "";
+
       session.user = {
         ...session.user,
-        id: (token.providerUserId as string | undefined) ?? token.sub,
+        id: userId,
         login: token.githubLogin as string | undefined
       };
       session.githubAccessToken = token.githubAccessToken as string | undefined;
@@ -66,25 +73,4 @@ export async function getSafeSessionDebug() {
       : null,
     hasGithubAccessToken: Boolean(session?.githubAccessToken)
   };
-}
-
-declare module "next-auth" {
-  interface Session {
-    githubAccessToken?: string;
-    user: {
-      id?: string;
-      login?: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-    };
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    providerUserId?: string;
-    githubLogin?: string;
-    githubAccessToken?: string;
-  }
 }

@@ -1,42 +1,15 @@
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { listSwarmRuns, type SwarmRun } from "@/lib/api";
 
-export type StoredRun = {
-  run_id: string;
-  status: "passed" | "failed" | "needs_approval";
-  provider_used: "copilot" | "openai" | "deterministic_fallback";
-  title: string;
-  goal: string;
-  constraints: string[];
-  plan: string[];
-  artifacts: Record<string, unknown>;
-  attempts: Record<string, unknown>;
-  created_at: string;
-};
+export type StoredRun = SwarmRun;
 
-const DATA_DIR = path.join(process.cwd(), "data", "runs");
-
-async function ensureStore() {
-  await mkdir(DATA_DIR, { recursive: true });
-}
-
-export async function saveRun(run: StoredRun) {
-  await ensureStore();
-  const file = path.join(DATA_DIR, `${run.run_id}.json`);
-  await writeFile(file, JSON.stringify(run, null, 2), "utf-8");
+/**
+ * Compatibility shim for older imports.
+ * Product-authoritative run persistence lives behind the API-backed swarm routes.
+ */
+export async function saveRun(_run: StoredRun) {
+  throw new Error("saveRun is deprecated. Persist runs through the API swarm routes.");
 }
 
 export async function listRuns(): Promise<StoredRun[]> {
-  await ensureStore();
-  const files = (await readdir(DATA_DIR))
-    .filter((f) => f.endsWith(".json"))
-    .sort()
-    .reverse();
-
-  const runs: StoredRun[] = [];
-  for (const file of files) {
-    const raw = await readFile(path.join(DATA_DIR, file), "utf-8");
-    runs.push(JSON.parse(raw) as StoredRun);
-  }
-  return runs;
+  return listSwarmRuns();
 }

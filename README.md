@@ -90,8 +90,8 @@ The backend now runs a real bounded flow in `apps/api/app/services/swarm.py`:
 ### 1. Create the GitHub OAuth app
 For local development, use:
 
-- **Homepage URL**: `http://localhost:3000`
-- **Authorization callback URL**: `http://localhost:3000/api/auth/callback/github`
+- **Homepage URL**: `http://localhost:3001`
+- **Authorization callback URL**: `http://localhost:3001/api/auth/callback/github`
 
 ### 2. Fill env files
 Copy the templates and keep the values aligned across the repo:
@@ -117,8 +117,19 @@ Set at minimum:
 docker compose up --build
 ```
 
+The canonical run path in this starter is:
+
+```text
+browser/dashboard form
+  -> apps/web route handlers at /api/swarm/runs
+  -> apps/api /swarm/runs
+  -> JSON run persistence in the API runs directory
+```
+
+The web app no longer maintains a separate authoritative run store.
+
 ### 4. Open the apps
-- Web: `http://localhost:3000`
+- Web: `http://localhost:3001`
 - API docs: `http://localhost:8000/docs`
 
 ## Key files to inspect first
