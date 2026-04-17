@@ -16,14 +16,14 @@ Once the runtime path and auth boundary are stable, the largest remaining PRD ga
 
 - `apps/web/components/task-form.tsx`
 - `apps/web/app/dashboard/page.tsx`
-- `apps/web/components/header.tsx`
-- `apps/api/app/models/schemas.py`
-- `apps/api/app/services/swarm.py`
-- `apps/api/app/services/openai_swarm.py`
-- `apps/web/lib/ai-settings.ts`
 - `apps/web/app/dashboard/[run_id]/page.tsx`
 - `apps/web/components/run-summary-card.tsx`
 - `apps/web/components/run-review-tabs.tsx`
+- `apps/web/components/run-stage-timeline.tsx`
+- `apps/web/components/run-finding-list.tsx`
+- `apps/web/lib/api.ts`
+- `apps/api/app/models/schemas.py`
+- `apps/api/app/services/swarm.py`
 
 ## Expected max files changed
 
@@ -31,7 +31,7 @@ Once the runtime path and auth boundary are stable, the largest remaining PRD ga
 
 ## Risk
 
-Medium. This phase changes product UI and run-shape expectations, but it should not alter the already-stabilized auth or route boundaries beyond the data fields required for structured review.
+Medium. This phase changes product UI and additive run-shape expectations, but it should not alter the already-stabilized auth or route boundaries beyond the data fields required for structured review.
 
 ## Rollback note
 
@@ -56,15 +56,16 @@ Revert the new dashboard and run-detail UI components and any additive schema fi
 ## Tasks
 
 - extend `TaskRequest` and `RunState` only as needed to support structured launch and structured review
-- replace the dashboard’s `<pre>` run dump with summary cards and status groupings
+- derive provider, issue counts, and stage state from current artifacts where possible instead of adding avoidable schema churn
+- replace the dashboard’s raw JSON dump with summary cards and status groupings
 - replace the form result `<pre>` with a redirect or link into a run-detail experience
 - add the run-detail route and tabs for Summary, Timeline, Review, and Raw JSON
-- surface validator rationale, issue counts, and stage progression as explicit UI state
+- surface validator rationale, issue counts, stage progression, and repair state as explicit UI state
 - keep raw artifact inspection available but no longer default
 
 ## Validation command
 
-`python -m compileall apps/api/app && (cd apps/web && npm run build)`
+`bash scripts/dev/workflow-check.sh && python -m compileall apps/api/app && (cd apps/web && npm run build)`
 
 ## Validation
 

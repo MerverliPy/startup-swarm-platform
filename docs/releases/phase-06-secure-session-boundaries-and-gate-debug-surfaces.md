@@ -1,6 +1,6 @@
 # Phase 06 — Secure session boundaries and gate debug surfaces
 
-Status: pending
+Status: in_progress
 Release: v0.2.0
 Phase file: docs/releases/phase-06-secure-session-boundaries-and-gate-debug-surfaces.md
 
@@ -15,56 +15,56 @@ After the runtime path is unified, the next highest-risk mismatch is that `apps/
 ## Primary files
 
 - `apps/web/lib/auth.ts`
+- `apps/web/types/next-auth.d.ts`
 - `apps/web/app/api/auth/[...nextauth]/route.ts`
 - `apps/web/app/api/session-debug/route.ts`
 - `apps/web/app/api/copilot-smoke/route.ts`
 - `apps/web/components/copilot-smoke-button.tsx`
-- `apps/web/components/session-provider.tsx`
 - `apps/web/app/dashboard/page.tsx`
-- `apps/api/app/routers/auth.py`
-- `apps/api/app/auth/security.py`
 - `README.md`
 - `docs/architecture.md`
 
 ## Expected max files changed
 
-11
+9
 
 ## Risk
 
-High. This phase changes auth/session contracts and any server-side code that depends on GitHub tokens. Incorrect changes could break sign-in, Copilot integration, or internal diagnostics.
+High. This phase changes the web auth/session contract and the server-side path used for Copilot diagnostics. Incorrect changes could break sign-in, server-side token access, or internal smoke testing.
 
 ## Rollback note
 
-Revert the NextAuth callback changes, any server-side token lookup changes, the debug-route gating changes, and the related documentation updates.
+Revert the NextAuth callback changes, the server-side token helper changes, the diagnostics gating logic, the dashboard smoke-surface removal, and the related documentation updates.
 
 ## In scope
 
 - remove `githubAccessToken` from the browser-visible session contract
-- keep GitHub access tokens server-only
-- move smoke and session-debug routes behind explicit dev-only or internal-only gating
+- keep GitHub access tokens server-only inside the authenticated NextAuth/JWT path
+- add explicit dev-only or internal-only gating to `session-debug` and `copilot-smoke`
 - remove smoke-test controls from the default dashboard flow
 - update auth and architecture docs so they describe the server-only token boundary accurately
 
 ## Out of scope
 
-- canonical run-path selection
-- structured run-review UI
-- workspaces, templates, compare, or approval inbox
-- iPhone/PWA install behavior
+- platform JWT adoption for all swarm routes
+- new approval actions, templates, or compare flows
+- run-review UI redesign
+- iPhone/PWA install or shell work
+- backend storage or queue changes
 
 ## Tasks
 
-- rewrite NextAuth callbacks so the browser session contains identity metadata only
-- update any server-side token retrieval helper to source tokens without exposing them through `Session`
-- add explicit gating to `session-debug` and `copilot-smoke` routes
-- remove the smoke-test button from the normal dashboard surface
-- align `README.md` and `docs/architecture.md` with the server-only token model
-- verify that backend auth/security helpers still match the chosen token flow
+- rewrite NextAuth callbacks so the browser session exposes identity fields only
+- remove `githubAccessToken` from `apps/web/types/next-auth.d.ts`
+- keep the GitHub access token accessible only through a server-side helper in `apps/web/lib/auth.ts`
+- add an explicit diagnostics gate for `session-debug` and `copilot-smoke` based on environment and an optional internal key
+- make `apps/web/app/api/copilot-smoke/route.ts` consume the server-only token helper instead of reading from `Session`
+- remove `CopilotSmokeButton` from `apps/web/app/dashboard/page.tsx`
+- align `README.md` and `docs/architecture.md` with the actual server-only token model and gated diagnostics behavior
 
 ## Validation command
 
-`python -m compileall apps/api/app && (cd apps/web && npm run build)`
+`bash scripts/dev/workflow-check.sh && python -m compileall apps/api/app && (cd apps/web && npm run build)`
 
 ## Validation
 
@@ -82,7 +82,7 @@ Ready to ship:
 - server-side Copilot or GitHub calls still have an approved token retrieval path
 - `session-debug` and `copilot-smoke` are not reachable through the default product flow in production mode
 - the dashboard no longer presents smoke validation as a primary user action
-- product auth docs match the implemented token boundary
+- `README.md` and `docs/architecture.md` match the implemented token boundary and diagnostics gating behavior
 
 ## Release notes
 
