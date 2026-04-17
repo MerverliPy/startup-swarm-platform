@@ -1,5 +1,9 @@
-import GitHub from "next-auth/providers/github";
+import { getToken } from "@auth/core/jwt";
 import NextAuth from "next-auth";
+import GitHub from "next-auth/providers/github";
+
+const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+const diagnosticsInternalKey = process.env.PLATFORM_INTERNAL_API_KEY?.trim();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -47,19 +51,62 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         id: userId,
         login: token.githubLogin as string | undefined
       };
-      session.githubAccessToken = token.githubAccessToken as string | undefined;
+
       return session;
     }
   }
 });
 
-export async function getGitHubAccessToken(): Promise<string | null> {
-  const session = await auth();
-  return session?.githubAccessToken ?? null;
+function usesSecureAuthCookie(request: Request) {
+  const configuredAuthUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL;
+
+  if (configuredAuthUrl) {
+    return configuredAuthUrl.startsWith("https://");
+  }
+
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+
+  if (forwardedProto) {
+    return forwardedProto.split(",")[0]?.trim() === "https";
+  }
+
+  return new URL(request.url).protocol === "https:";
 }
 
-export async function getSafeSessionDebug() {
+async function getServerJwt(request: Request) {
+  if (!authSecret) {
+    return null;
+  }
+
+  const secureCookie = usesSecureAuthCookie(request);
+
+  return (
+    (await getToken({ req: request, secret: authSecret, secureCookie })) ??
+    (await getToken({ req: request, secret: authSecret, secureCookie: !secureCookie }))
+  );
+}
+
+export function isDiagnosticsRequestAllowed(request: Request) {
+  if (process.env.NODE_ENV !== "production") {
+    return true;
+  }
+
+  if (!diagnosticsInternalKey || diagnosticsInternalKey === "change-me-internal") {
+    return false;
+  }
+
+  return request.headers.get("x-platform-internal-key") === diagnosticsInternalKey;
+}
+
+export async function getGitHubAccessToken(request: Request): Promise<string | null> {
+  const token = await getServerJwt(request);
+
+  return typeof token?.githubAccessToken === "string" ? token.githubAccessToken : null;
+}
+
+export async function getSafeSessionDebug(request: Request) {
   const session = await auth();
+  const githubAccessToken = await getGitHubAccessToken(request);
 
   return {
     authenticated: Boolean(session?.user?.id),
@@ -71,6 +118,6 @@ export async function getSafeSessionDebug() {
           email: session.user.email ?? null
         }
       : null,
-    hasGithubAccessToken: Boolean(session?.githubAccessToken)
+    hasGithubAccessToken: Boolean(githubAccessToken)
   };
 }

@@ -36,6 +36,8 @@ The platform stores run state, limits loops, and keeps the control plane determi
 ### Web-first GitHub OAuth
 GitHub OAuth lives in the Next.js layer. The browser gets a normal signed-in session, but the starter does **not** push the raw GitHub access token into the client-visible session object.
 
+Server-side routes that need GitHub access use the helper in `apps/web/lib/auth.ts` to read the token from the encrypted Auth.js JWT instead of from the browser session payload.
+
 ### Internal platform session exchange
 When the web app needs a backend platform token, it can call the API's internal exchange endpoint:
 
@@ -54,6 +56,8 @@ The intended architecture is:
 - platform JWTs used for your own backend APIs
 
 That means GitHub identity can power both your product session model and later Copilot-based features without treating Copilot as a standalone identity provider.
+
+Diagnostic routes such as `/api/session-debug` and `/api/copilot-smoke` are not part of the default dashboard flow and should only be reachable in development or when an internal request supplies `x-platform-internal-key`.
 
 ## Monorepo layout
 

@@ -40,8 +40,8 @@ backend API instead of maintaining a second local run store.
 
 ### GitHub sign-in
 - web app signs users in with GitHub OAuth
-- token may be stored in session/JWT
-- token can be exchanged or forwarded to backend if needed
+- browser-visible session data is limited to identity fields
+- the GitHub provider token stays in the server-side Auth.js JWT path and is read through server helpers when needed
 
 ### GitHub repository access
 Recommended upgrade path:
@@ -50,7 +50,8 @@ Recommended upgrade path:
 
 ### Copilot access
 - Copilot access is user-based
-- the product can call Copilot on behalf of the user if you pass their GitHub token to the Copilot SDK server-side
+- the product can call Copilot on behalf of the user by reading their GitHub token server-side
+- debug and smoke-test routes stay outside the default dashboard path and require development mode or an internal key in production
 
 ## Storage
 

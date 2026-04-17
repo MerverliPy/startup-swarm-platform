@@ -1,6 +1,5 @@
 import Link from "next/link";
 import TaskForm from "@/components/task-form";
-import CopilotSmokeButton from "@/components/copilot-smoke-button";
 import { auth, signOut } from "@/lib/auth";
 import { listSwarmRuns } from "@/lib/api";
 import { getAiSettings } from "@/lib/ai-settings";
@@ -50,11 +49,6 @@ export default async function DashboardPage() {
             <button type="submit">Sign out</button>
           </form>
         </div>
-      </section>
-
-      <section>
-        <h3>Copilot smoke test</h3>
-        <CopilotSmokeButton />
       </section>
 
       <section>

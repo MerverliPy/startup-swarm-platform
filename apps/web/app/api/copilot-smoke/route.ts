@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { CopilotClient, approveAll } from "@github/copilot-sdk";
-import { auth } from "@/lib/auth";
+import { auth, getGitHubAccessToken, isDiagnosticsRequestAllowed } from "@/lib/auth";
 import { getAiSettings } from "@/lib/ai-settings";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (!isDiagnosticsRequestAllowed(request)) {
+    return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
+  }
+
   const session = await auth();
-  const githubToken = session?.githubAccessToken ?? null;
+  const githubToken = await getGitHubAccessToken(request);
   const settings = getAiSettings();
 
   try {
@@ -62,7 +66,7 @@ export async function GET() {
       return NextResponse.json({
         ok: true,
         provider: settings.provider,
-        auth_mode: settings.cliUrl ? "external_cli_server" : "session_token",
+        auth_mode: settings.cliUrl ? "external_cli_server" : "server_github_token",
         authenticated: Boolean(session?.user?.id),
         hasGithubAccessToken: Boolean(githubToken),
         content: response?.data?.content ?? null
@@ -75,7 +79,7 @@ export async function GET() {
       {
         ok: false,
         provider: settings.provider,
-        auth_mode: settings.cliUrl ? "external_cli_server" : "session_token",
+        auth_mode: settings.cliUrl ? "external_cli_server" : "server_github_token",
         authenticated: Boolean(session?.user?.id),
         hasGithubAccessToken: Boolean(githubToken),
         error: error instanceof Error ? error.message : "Unknown SDK error"

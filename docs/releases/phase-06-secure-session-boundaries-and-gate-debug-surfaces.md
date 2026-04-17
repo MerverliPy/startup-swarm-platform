@@ -1,6 +1,6 @@
 # Phase 06 — Secure session boundaries and gate debug surfaces
 
-Status: in_progress
+Status: complete
 Release: v0.2.0
 Phase file: docs/releases/phase-06-secure-session-boundaries-and-gate-debug-surfaces.md
 
@@ -68,13 +68,18 @@ Revert the NextAuth callback changes, the server-side token helper changes, the 
 
 ## Validation
 
-Status: pending
+Status: PASS
 Evidence:
-- not run yet
+- internal workflow validation: `bash scripts/dev/workflow-check.sh` -> PASS
+- product validation: `python -m compileall apps/api/app` -> PASS
+- product validation: `(cd apps/web && npm run build)` -> PASS
+- `apps/web/lib/auth.ts` now keeps `githubAccessToken` in the server-side JWT path, removes it from the browser session callback, and gates diagnostics routes by environment or `x-platform-internal-key`
+- `apps/web/app/api/copilot-smoke/route.ts` reads the GitHub token through the server-only helper, and `apps/web/app/dashboard/page.tsx` no longer exposes the smoke-test action in the default dashboard flow
+- `README.md` and `docs/architecture.md` now describe the server-only token boundary and gated diagnostics behavior
 Blockers:
-- not validated yet
+- none
 Ready to ship:
-- no
+- yes
 
 ## Acceptance criteria
 
@@ -86,8 +91,10 @@ Ready to ship:
 
 ## Release notes
 
-- pending
+- Removed `githubAccessToken` from the browser-visible session contract and kept GitHub token access on the server-side auth path only.
+- Gated `session-debug` and `copilot-smoke` behind internal diagnostics controls and removed the dashboard smoke action from the default user flow.
+- Updated `README.md` and `docs/architecture.md` to match the server-only token boundary and gated diagnostics behavior.
 
 ## Completion summary
 
-- pending
+- Phase 06 closes the browser-token exposure gap and moves diagnostics off the default dashboard path without removing the approved server-side token flow used for internal GitHub and Copilot calls.
