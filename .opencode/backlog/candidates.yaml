@@ -1,0 +1,58 @@
+selection_order:
+  - explicit_user_scope
+  - highest_priority
+  - same_module_followup
+  - smallest_safe_scope
+  - clearest_validation
+
+queue_rules:
+  - Only entries under `candidates` are selectable.
+  - Entries under `archived` are retained so shipped backlog references remain valid.
+  - Keep non-selected historical ideas out of `candidates` so `/next-phase` and `/autoflow` stay deterministic.
+  - Use `/autoflow` as the default execution path after `/phase-status` or `/next-phase`.
+
+constraints:
+  max_files_changed: 8
+  prefer_single_module: true
+  avoid_generic_tasks: true
+
+candidates:
+  - id: add-repo-path-risk-catalog
+    title: Expand the internal risk catalog for protected product paths
+    module: workflow
+    priority: 7
+    execution_flow: /autoflow
+    expected_max_files_changed: 5
+    drivers:
+      - The repo contains multiple auth, Copilot, and swarm runtime files that deserve a more explicit risk catalog.
+      - Future product-touching phases should inherit clearer protected-path guidance.
+    files:
+      - AGENTS.md
+      - .opencode/AGENTS.md
+      - docs/releases/phase-registry.md
+      - .opencode/plans/current-phase.md
+      - docs/releases/phase-06-expand-repo-path-risk-catalog.md
+    validation: bash scripts/dev/doctor.sh && bash scripts/dev/workflow-check.sh
+    acceptance:
+      - High-risk product files are grouped by boundary type.
+      - No product runtime code changes are made.
+
+archived:
+  - id: dry-run-internal-workflow-on-doc-only-change
+    title: Dry-run the internal workflow on a doc-only root-level change
+    module: workflow
+    priority: 9
+    execution_flow: /autoflow
+    expected_max_files_changed: 4
+    drivers:
+      - Verify that the transplanted internal workflow can select, implement, validate, and close a harmless internal-only task.
+      - Keep the first post-transplant exercise out of `apps/**` and away from product runtime code.
+    files:
+      - AGENTS.md
+      - docs/releases/phase-registry.md
+      - .opencode/plans/current-phase.md
+      - docs/releases/phase-05-dry-run-internal-workflow-on-doc-only-change.md
+    validation: bash scripts/dev/doctor.sh && bash scripts/dev/workflow-check.sh && bash scripts/dev/autoflow.sh inspect-json
+    acceptance:
+      - A bounded internal-only phase can be selected and tracked without touching product files.
+      - Workflow guardrails remain green after the dry run.
