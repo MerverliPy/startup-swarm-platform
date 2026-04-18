@@ -16,6 +16,7 @@ class TaskRequest(BaseModel):
     title: str = Field(min_length=3, max_length=160)
     goal: str = Field(min_length=10)
     constraints: List[str] = Field(default_factory=list)
+    run_type: Literal["bounded_swarm"] = "bounded_swarm"
     require_marketing: bool = False
     require_repo_context: bool = False
 
@@ -33,7 +34,10 @@ class RunState(BaseModel):
     title: str
     goal: str
     constraints: List[str]
+    run_type: Literal["bounded_swarm"] = "bounded_swarm"
+    provider: Literal["deterministic", "openai"] = "deterministic"
     plan: List[str] = Field(default_factory=list)
     artifacts: dict = Field(default_factory=dict)
     attempts: dict = Field(default_factory=lambda: {"repair": 0})
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    completed_at: str | None = None

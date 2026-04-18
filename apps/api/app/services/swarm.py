@@ -206,6 +206,8 @@ def _llm_run_swarm(task: TaskRequest) -> RunState:
         title=task.title,
         goal=task.goal,
         constraints=constraints,
+        run_type=task.run_type,
+        provider="openai",
     )
     save_run(run)
 
@@ -239,6 +241,7 @@ def _llm_run_swarm(task: TaskRequest) -> RunState:
     else:
         run.status = "passed"
 
+    run.completed_at = datetime.now(timezone.utc).isoformat()
     save_run(run)
     return run
 
@@ -252,6 +255,8 @@ def _deterministic_run_swarm(task: TaskRequest) -> RunState:
         title=task.title,
         goal=task.goal,
         constraints=constraints,
+        run_type=task.run_type,
+        provider="deterministic",
     )
     save_run(run)
 
@@ -277,6 +282,7 @@ def _deterministic_run_swarm(task: TaskRequest) -> RunState:
     status, validator = _validator_artifact(task, critic, repair)
     run.artifacts["validator"] = validator
     run.status = status
+    run.completed_at = datetime.now(timezone.utc).isoformat()
     save_run(run)
     return run
 

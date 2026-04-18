@@ -3,6 +3,9 @@
 Status: pending
 Release: v0.3.0
 Phase file: docs/releases/phase-07-productize-command-surface-and-run-review.md
+Phase kind: product-touching
+Protected path approval required: yes
+Protected path approval granted: yes
 
 ## Goal
 
