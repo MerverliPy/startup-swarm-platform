@@ -1,6 +1,6 @@
 # Phase 09 — Ship iPhone-first PWA shell and mobile navigation
 
-Status: pending
+Status: complete
 Release: v0.4.0
 Phase file: docs/releases/phase-09-ship-iphone-first-pwa-shell-and-mobile-navigation.md
 
@@ -68,13 +68,17 @@ Revert the manifest, Apple metadata, install coach, safe-area layout primitives,
 
 ## Validation
 
-Status: pending
+Status: PASS
 Evidence:
-- not run yet
+- Internal workflow validation passed: `bash scripts/dev/workflow-check.sh`
+- Required product runtime validation passed: `(cd apps/web && npm run build)`
+- The app now exposes a manifest and Apple install metadata via `apps/web/app/manifest.ts` and `apps/web/app/layout.tsx`
+- A valid touch icon exists at `apps/web/public/apple-touch-icon.png`, primary narrow-screen navigation is provided by `apps/web/components/bottom-nav.tsx`, and safe-area-aware shell spacing is implemented in `apps/web/app/globals.css`
+- Narrow-screen home/dashboard readability was improved in `apps/web/app/page.tsx` and `apps/web/app/dashboard/page.tsx` without touching unapproved product areas
 Blockers:
-- not validated yet
+- none
 Ready to ship:
-- no
+- yes
 
 ## Acceptance criteria
 
@@ -86,8 +90,8 @@ Ready to ship:
 
 ## Release notes
 
-- pending
+- Phase 09 shipped with iPhone-first PWA shell, install metadata, safe-area handling, and mobile navigation foundations.
 
 ## Completion summary
 
-- pending
+- Phase 09 is complete and validated; the web shell now includes the bounded PWA and mobile-navigation foundation required for the next product phase.

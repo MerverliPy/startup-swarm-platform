@@ -24,10 +24,14 @@ export default async function DashboardPage({
   if (!user?.id) {
     return (
       <main style={{ display: "grid", gap: 24 }}>
-        <h2>Dashboard</h2>
-        <p>GitHub sign-in is required before using the dashboard.</p>
-        <SignInButton callbackUrl="/dashboard" />
-        <Link href="/">Back to home</Link>
+        <section className="app-panel" style={{ display: "grid", gap: 16 }}>
+          <h2 style={{ margin: 0 }}>Dashboard</h2>
+          <p className="muted-copy">
+            GitHub sign-in is required before using the dashboard.
+          </p>
+          <SignInButton callbackUrl="/dashboard" />
+          <Link href="/">Back to home</Link>
+        </section>
       </main>
     );
   }
@@ -72,16 +76,39 @@ export default async function DashboardPage({
 
   return (
     <main style={{ display: "grid", gap: 24 }}>
-      <h2>Dashboard</h2>
+      <section className="app-panel" style={{ display: "grid", gap: 16 }}>
+        <div style={{ display: "grid", gap: 8 }}>
+          <h2 style={{ margin: 0 }}>Dashboard</h2>
+          <p className="muted-copy">
+            Run, review, and revisit swarm work from a mobile-friendly product shell.
+          </p>
+        </div>
 
-      <section style={{ display: "grid", gap: 12 }}>
-        <p>
-          Signed in as <strong>{label}</strong>
-        </p>
+        <div
+          style={{
+            display: "grid",
+            gap: 16,
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          }}
+        >
+          <section style={{ display: "grid", gap: 8 }}>
+            <p style={{ margin: 0 }}>
+              Signed in as <strong>{label}</strong>
+            </p>
+            <p className="muted-copy">
+              Keep approvals and reruns within reach even on narrow screens.
+            </p>
+          </section>
 
-        <p>
-          AI provider: <strong>{ai.provider}</strong>
-        </p>
+          <section style={{ display: "grid", gap: 8 }}>
+            <p style={{ margin: 0 }}>
+              AI provider: <strong>{ai.provider}</strong>
+            </p>
+            <p className="muted-copy">
+              Existing review and history surfaces stay intact while the shell adapts for mobile.
+            </p>
+          </section>
+        </div>
 
         <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <Link href="/">Back home</Link>
@@ -97,13 +124,13 @@ export default async function DashboardPage({
         </div>
       </section>
 
-      <section>
-        <h3>Create run</h3>
+      <section className="app-panel">
+        <h3 style={{ margin: 0 }}>Create run</h3>
         <TaskForm provider={ai.provider} />
       </section>
 
-      <section>
-        <h3>Recent runs</h3>
+      <section className="app-panel">
+        <h3 style={{ margin: 0 }}>Recent runs</h3>
         <RunHistoryFilters value={filters} />
         {filteredRuns.length === 0 ? (
           <p>{runs.length === 0 ? "No runs yet." : "No runs match the active filters."}</p>
