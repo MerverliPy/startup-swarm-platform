@@ -1,6 +1,6 @@
 # Phase 11 — Land grounded quality signals and dashboard retention primitives
 
-Status: pending
+Status: complete
 Release: v0.5.1
 Phase file: docs/releases/phase-11-land-grounded-quality-signals-and-dashboard-retention-primitives.md
 
@@ -70,13 +70,18 @@ Revert the additive schema fields, dashboard retention components, and run-detai
 
 ## Validation
 
-Status: pending
+Status: PASS
 Evidence:
-- not run yet
+- Internal workflow validation passed: `bash scripts/dev/workflow-check.sh`
+- Product runtime validation passed: `python -m compileall apps/api/app` and `(cd apps/web && npm run build)` both succeeded
+- `apps/api/app/models/schemas.py` now adds grounded `quality_signals` to `RunState`, including confidence, risk, and grounding fields
+- `apps/api/app/services/swarm.py` refreshes grounded quality fields for both deterministic and OpenAI-backed execution paths via shared run finalization/build logic
+- `apps/web/app/dashboard/page.tsx`, `apps/web/components/approval-inbox.tsx`, and `apps/web/components/suggested-next-actions.tsx` render approval inbox and suggested next actions from explicit run state
+- `apps/web/app/dashboard/[run_id]/page.tsx` renders grounded confidence/risk signals while retaining the existing approval and review surfaces
 Blockers:
-- not validated yet
+- none
 Ready to ship:
-- no
+- yes
 
 ## Acceptance criteria
 
@@ -89,8 +94,8 @@ Ready to ship:
 
 ## Release notes
 
-- pending
+- Phase 11 shipped grounded run-quality signals, approval inbox, and suggested next actions surfaces across the dashboard and run detail views.
 
 ## Completion summary
 
-- pending
+- Phase 11 is complete and validated; grounded quality signals now flow through both execution paths and the dashboard now exposes explicit approval and next-action retention primitives.

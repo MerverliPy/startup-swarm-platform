@@ -104,6 +104,123 @@ def _sync_review_metadata(run: RunState) -> None:
     run.review.last_updated_at = run.review.last_updated_at or run.completed_at or run.created_at
 
 
+def _artifact_map(run: RunState, key: str) -> dict:
+    artifact = run.artifacts.get(key)
+    return artifact if isinstance(artifact, dict) else {}
+
+
+def _artifact_list(artifact: dict, key: str) -> list[str]:
+    value = artifact.get(key)
+    return [item for item in value if isinstance(item, str)] if isinstance(value, list) else []
+
+
+def _derive_quality_signals(run: RunState) -> dict:
+    critic = _artifact_map(run, "critic")
+    validator = _artifact_map(run, "validator")
+    blockers = _artifact_list(critic, "blockers") or _artifact_list(validator, "blockers")
+    major_issues = _artifact_list(critic, "major_issues") or _artifact_list(validator, "major_issues")
+    minor_issues = _artifact_list(critic, "minor_issues")
+    repair_attempts = int(run.attempts.get("repair", 0) or 0)
+    approval_required = (
+        validator.get("human_approval_required") is True or validator.get("decision") == "needs_approval"
+    )
+
+    risk_flags: list[str] = []
+    if blockers:
+        risk_flags.append(f"{len(blockers)} blocker(s) remain unresolved.")
+    if major_issues:
+        risk_flags.append(f"{len(major_issues)} major issue(s) still require operator judgment.")
+    if approval_required or run.status == "needs_approval":
+        risk_flags.append("The run is in a human approval loop before it can be treated as final.")
+    if repair_attempts:
+        risk_flags.append("A bounded repair pass was needed to address critique findings.")
+    if not risk_flags:
+        risk_flags.append("No blockers, approval gates, or repair retries were recorded.")
+
+    if blockers:
+        risk_level = "high"
+    elif major_issues or approval_required or run.status == "needs_approval" or repair_attempts:
+        risk_level = "medium"
+    else:
+        risk_level = "low"
+
+    if run.status == "passed" and not blockers and not major_issues and repair_attempts == 0:
+        confidence_level = "high"
+        confidence_reason = "Validator passed the run without blockers, major issues, or repair retries."
+    elif run.status in {"passed", "needs_approval"} and not blockers:
+        confidence_level = "medium"
+        confidence_reason = (
+            "The run is usable, but repair activity, major issues, or approval gates reduce confidence."
+        )
+    else:
+        confidence_level = "low"
+        confidence_reason = "Validation still has blockers or the run failed, so confidence remains low."
+
+    return {
+        "summary": "Grounded quality signals derived from validator state, review state, and issue counts.",
+        "confidence_level": confidence_level,
+        "confidence_reason": confidence_reason,
+        "risk_level": risk_level,
+        "risk_flags": risk_flags,
+        "grounding": {
+            "status": run.status,
+            "blocker_count": len(blockers),
+            "major_issue_count": len(major_issues),
+            "minor_issue_count": len(minor_issues),
+            "repair_attempts": repair_attempts,
+            "approval_required": approval_required or run.status == "needs_approval",
+        },
+    }
+
+
+def _derive_product_metrics(run: RunState) -> dict:
+    validator = _artifact_map(run, "validator")
+    approval_required = (
+        validator.get("human_approval_required") is True or validator.get("decision") == "needs_approval"
+    )
+    approval_resolution = next(
+        (
+            entry.created_at
+            for entry in run.review.action_history
+            if entry.action in {"approve", "reject"}
+        ),
+        None,
+    )
+
+    events = [{"name": "activation", "recorded_at": run.created_at, "value": 1}]
+
+    if run.status == "passed":
+        events.append({"name": "run_success", "recorded_at": run.completed_at or run.created_at, "value": 1})
+
+    if approval_required:
+        events.append(
+            {"name": "approval_required", "recorded_at": run.completed_at or run.created_at, "value": 1}
+        )
+
+    if approval_required and approval_resolution:
+        events.append({"name": "approval_completed", "recorded_at": approval_resolution, "value": 1})
+
+    if run.compare.source_run_id:
+        events.append({"name": "rerun_created", "recorded_at": run.created_at, "value": 1})
+
+    if run.compare.compare_key:
+        events.append({"name": "compare_ready", "recorded_at": run.created_at, "value": 1})
+
+    return {
+        "summary": "Product metrics recorded from explicit run state, approval history, and compare metadata.",
+        "events": events,
+    }
+
+
+def _refresh_derived_artifacts(run: RunState) -> None:
+    quality_signals = _derive_quality_signals(run)
+    product_metrics = _derive_product_metrics(run)
+    run.quality_signals = run.quality_signals.model_validate(quality_signals)
+    run.product_metrics = run.product_metrics.model_validate(product_metrics)
+    run.artifacts["quality_signals"] = quality_signals
+    run.artifacts["product_metrics"] = product_metrics
+
+
 def _orchestrator_artifact(task: TaskRequest, constraints: list[str]) -> dict:
     plan = [
         "Define the minimum viable artifact and acceptance criteria",
@@ -186,6 +303,12 @@ def _critic_artifact(task: TaskRequest, constraints: list[str], build_artifact: 
         "blockers": blockers,
         "major_issues": major_issues,
         "minor_issues": minor_issues,
+        "risk_level": "high" if blockers else "medium" if major_issues else "low",
+        "risk_flags": [
+            *([f"{len(blockers)} blocker(s) remain unresolved."] if blockers else []),
+            *([f"{len(major_issues)} major issue(s) require judgment."] if major_issues else []),
+            *(["No blocking or major risks were recorded."] if not blockers and not major_issues else []),
+        ],
     }
 
 
@@ -226,7 +349,7 @@ def _validator_artifact(task: TaskRequest, critic_artifact: dict, repair_artifac
         rationale = "Blocking gaps remain after the bounded repair pass."
     elif "production_ready" in normalized_constraints and major_issues:
         status = "needs_approval"
-        decision = "human_approval_required"
+        decision = "needs_approval"
         rationale = (
             "The run produced a usable artifact, but production-ready was requested and infrastructure risks remain."
         )
@@ -241,6 +364,8 @@ def _validator_artifact(task: TaskRequest, critic_artifact: dict, repair_artifac
         "rationale": rationale,
         "blockers": blockers,
         "major_issues": major_issues,
+        "confidence_level": "low" if blockers else "medium" if major_issues else "high",
+        "confidence_reason": rationale,
         "human_approval_required": status == "needs_approval",
     }
 
@@ -259,6 +384,7 @@ def _build_run(task: TaskRequest, provider: str) -> RunState:
         compare=_build_compare_metadata(task),
         review=_review_state_for_status("running"),
     )
+    _refresh_derived_artifacts(run)
     save_run(run)
     return run
 
@@ -272,6 +398,7 @@ def _finalize_run(run: RunState, status: str) -> None:
     run.review.action_history = prior_history
     run.review.last_note = prior_note
     run.review.last_updated_at = run.completed_at
+    _refresh_derived_artifacts(run)
     save_run(run)
 
 
@@ -353,7 +480,6 @@ def _deterministic_run_swarm(task: TaskRequest) -> RunState:
 
 def run_swarm(task: TaskRequest) -> RunState:
     settings = get_settings()
-
     if settings.openai_api_key:
         try:
             return _llm_run_swarm(task)
@@ -420,5 +546,6 @@ def apply_run_action(run_id: str, action_request: RunActionRequest) -> RunState:
     run.review.last_updated_at = now
     run.completed_at = run.completed_at or now
     _sync_review_metadata(run)
+    _refresh_derived_artifacts(run)
     save_run(run)
     return run

@@ -31,8 +31,52 @@ export type SwarmRun = {
     compare_key?: string | null;
     source_run_id?: string | null;
   };
+  quality_signals?: {
+    summary?: string;
+    confidence_level?: "low" | "medium" | "high";
+    confidence_reason?: string;
+    risk_level?: "low" | "medium" | "high";
+    risk_flags?: string[];
+    grounding?: {
+      status?: string;
+      blocker_count?: number;
+      major_issue_count?: number;
+      minor_issue_count?: number;
+      repair_attempts?: number;
+      approval_required?: boolean;
+    };
+  };
+  product_metrics?: {
+    summary?: string;
+    events?: Array<{
+      name?: string;
+      recorded_at?: string;
+      value?: number;
+    }>;
+  };
   created_at: string;
   completed_at?: string | null;
+};
+
+export type RunQualitySignals = {
+  confidenceLevel: "low" | "medium" | "high";
+  confidenceReason: string;
+  riskLevel: "low" | "medium" | "high";
+  riskFlags: string[];
+  grounding: {
+    status: string;
+    blockerCount: number;
+    majorIssueCount: number;
+    minorIssueCount: number;
+    repairAttempts: number;
+    approvalRequired: boolean;
+  };
+};
+
+export type ProductMetricEvent = {
+  name: string;
+  recordedAt: string;
+  value: number;
 };
 
 type UnknownRecord = Record<string, unknown>;
@@ -51,6 +95,10 @@ function readStringArray(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")
     : [];
+}
+
+function readNumber(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
 function parseDate(value?: string | null): Date | null {
@@ -220,6 +268,104 @@ export function getRunTimeline(run: SwarmRun) {
       summary: readString(artifact?.summary),
     };
   });
+}
+
+export function getRunQualitySignals(run: SwarmRun): RunQualitySignals {
+  const quality = asRecord(run.quality_signals) ?? asRecord(run.artifacts.quality_signals);
+  const grounding = asRecord(quality?.grounding);
+
+  return {
+    confidenceLevel:
+      readString(quality?.confidence_level, "medium") === "low"
+        ? "low"
+        : readString(quality?.confidence_level, "medium") === "high"
+          ? "high"
+          : "medium",
+    confidenceReason: readString(quality?.confidence_reason, "Confidence was not recorded."),
+    riskLevel:
+      readString(quality?.risk_level, "low") === "high"
+        ? "high"
+        : readString(quality?.risk_level, "low") === "medium"
+          ? "medium"
+          : "low",
+    riskFlags: readStringArray(quality?.risk_flags),
+    grounding: {
+      status: readString(grounding?.status, run.status),
+      blockerCount: readNumber(grounding?.blocker_count),
+      majorIssueCount: readNumber(grounding?.major_issue_count),
+      minorIssueCount: readNumber(grounding?.minor_issue_count),
+      repairAttempts: readNumber(grounding?.repair_attempts),
+      approvalRequired: grounding?.approval_required === true,
+    },
+  };
+}
+
+export function getRunProductMetrics(run: SwarmRun): ProductMetricEvent[] {
+  const metrics = asRecord(run.product_metrics) ?? asRecord(run.artifacts.product_metrics);
+  const events = metrics?.events;
+
+  if (!Array.isArray(events)) {
+    return [];
+  }
+
+  return events
+    .map((entry) => {
+      const event = asRecord(entry);
+      if (!event) {
+        return null;
+      }
+
+      const name = readString(event.name);
+      const recordedAt = readString(event.recorded_at);
+      if (!name || !recordedAt) {
+        return null;
+      }
+
+      return {
+        name,
+        recordedAt,
+        value: readNumber(event.value, 1),
+      } satisfies ProductMetricEvent;
+    })
+    .filter((event): event is ProductMetricEvent => event !== null);
+}
+
+export function getSuggestedNextActions(run: SwarmRun) {
+  const actions: Array<{ label: string; href: string; reason: string }> = [];
+
+  if (run.status === "needs_approval" || run.review?.state === "pending") {
+    actions.push({
+      label: "Review approval decision",
+      href: `/dashboard/${run.run_id}`,
+      reason: "This run is waiting for an explicit operator approval action.",
+    });
+  }
+
+  if (run.review?.state === "revision_requested") {
+    actions.push({
+      label: "Inspect revision request",
+      href: `/dashboard/${run.run_id}`,
+      reason: "An operator requested changes before this work should move forward.",
+    });
+  }
+
+  if (run.status === "failed") {
+    actions.push({
+      label: "Review blockers",
+      href: `/dashboard/${run.run_id}`,
+      reason: "The validator recorded blockers that need attention before another run.",
+    });
+  }
+
+  if (run.compare?.source_run_id) {
+    actions.push({
+      label: "Compare with source run",
+      href: `/dashboard/${run.compare.source_run_id}`,
+      reason: "This run was created from a prior run and is ready for side-by-side review.",
+    });
+  }
+
+  return actions;
 }
 
 function resolveWebUrl(path: string) {

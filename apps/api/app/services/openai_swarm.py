@@ -32,6 +32,8 @@ class CriticArtifact(BaseModel):
     blockers: list[str] = Field(default_factory=list)
     major_issues: list[str] = Field(default_factory=list)
     minor_issues: list[str] = Field(default_factory=list)
+    risk_level: Literal["low", "medium", "high"] = "low"
+    risk_flags: list[str] = Field(default_factory=list)
 
 
 class ValidatorArtifact(BaseModel):
@@ -40,6 +42,8 @@ class ValidatorArtifact(BaseModel):
     rationale: str
     blockers: list[str] = Field(default_factory=list)
     major_issues: list[str] = Field(default_factory=list)
+    confidence_level: Literal["low", "medium", "high"] = "medium"
+    confidence_reason: str
     human_approval_required: bool = False
 
 
@@ -115,6 +119,7 @@ def build_critic_artifact(task: TaskRequest, constraints: list[str], build_artif
     instructions = (
         "You are the critic. Review the draft for blockers, major issues, and minor issues. "
         "Be strict about operational claims. "
+        "Set risk_level and risk_flags only from the structured findings you identify. "
         "If the task requires production readiness, call out missing persistence, worker queues, auth protection, or deployment hardening."
     )
 
@@ -129,6 +134,8 @@ Return:
 - blockers
 - major_issues
 - minor_issues
+- risk_level
+- risk_flags
 """.strip()
 
     artifact = _parse(CriticArtifact, instructions, prompt)
@@ -149,6 +156,7 @@ def build_validator_artifact(
         "1) If blockers remain, decision must be 'fail'. "
         "2) If production readiness is requested but major infrastructure risks remain, decision must be 'needs_approval'. "
         "3) Otherwise, return 'pass' only if the result is usable and the critique is adequately surfaced. "
+        "Set confidence_level and confidence_reason from the structured blocker, major issue, and repair state only. "
         "Set human_approval_required=true only when decision is 'needs_approval'."
     )
 
@@ -167,6 +175,8 @@ Return:
 - rationale
 - blockers
 - major_issues
+- confidence_level
+- confidence_reason
 - human_approval_required
 """.strip()
 

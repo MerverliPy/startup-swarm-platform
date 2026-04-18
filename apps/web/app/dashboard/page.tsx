@@ -1,6 +1,8 @@
 import Link from "next/link";
+import ApprovalInbox from "@/components/approval-inbox";
 import RunSummaryCard from "@/components/run-summary-card";
 import RunHistoryFilters, { type RunHistoryFiltersValue } from "@/components/run-history-filters";
+import SuggestedNextActions from "@/components/suggested-next-actions";
 import TaskForm from "@/components/task-form";
 import { auth, signOut } from "@/lib/auth";
 import { getRunApprovalState, getRunStatusLabel, listSwarmRuns } from "@/lib/api";
@@ -128,6 +130,17 @@ export default async function DashboardPage({
         <h3 style={{ margin: 0 }}>Create run</h3>
         <TaskForm provider={ai.provider} />
       </section>
+
+      <div
+        style={{
+          display: "grid",
+          gap: 24,
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+        }}
+      >
+        <ApprovalInbox runs={runs} />
+        <SuggestedNextActions runs={runs} />
+      </div>
 
       <section className="app-panel">
         <h3 style={{ margin: 0 }}>Recent runs</h3>

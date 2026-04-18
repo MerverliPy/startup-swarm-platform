@@ -36,6 +36,10 @@ The web dashboard and create-run flow share the same API-backed persistence sour
 Next.js layer acts as the canonical web-facing entrypoint and proxies run requests to the
 backend API instead of maintaining a second local run store.
 
+The dashboard is positioned as an execution console rather than a raw prompt runner: it
+shows run history, approval queues, grounded confidence/risk signals, and next actions
+that come directly from stored run state.
+
 ## Authentication flow
 
 ### GitHub sign-in
@@ -72,3 +76,5 @@ Production recommendation:
 - deterministic stage order
 - explicit success criteria
 - approval-gated side effects
+- additive quality signals derived from structured critic/validator output
+- additive product metrics derived from run, review, and compare metadata

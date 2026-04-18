@@ -59,6 +59,35 @@ class CompareMetadata(BaseModel):
     source_run_id: str | None = None
 
 
+class RunQualityGrounding(BaseModel):
+    status: Literal["queued", "running", "needs_approval", "failed", "passed"] = "queued"
+    blocker_count: int = 0
+    major_issue_count: int = 0
+    minor_issue_count: int = 0
+    repair_attempts: int = 0
+    approval_required: bool = False
+
+
+class RunQualitySignals(BaseModel):
+    summary: str = "Grounded quality signals have not been recorded yet."
+    confidence_level: Literal["low", "medium", "high"] = "medium"
+    confidence_reason: str = "Confidence has not been recorded yet."
+    risk_level: Literal["low", "medium", "high"] = "low"
+    risk_flags: List[str] = Field(default_factory=list)
+    grounding: RunQualityGrounding = Field(default_factory=RunQualityGrounding)
+
+
+class ProductMetricEvent(BaseModel):
+    name: str
+    recorded_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    value: int = 1
+
+
+class ProductMetrics(BaseModel):
+    summary: str = "Product metrics have not been recorded yet."
+    events: List[ProductMetricEvent] = Field(default_factory=list)
+
+
 class RunActionRequest(BaseModel):
     action: ReviewActionName
     note: str | None = Field(default=None, max_length=500)
@@ -82,5 +111,7 @@ class RunState(BaseModel):
     attempts: dict = Field(default_factory=lambda: {"repair": 0})
     review: ReviewState = Field(default_factory=ReviewState)
     compare: CompareMetadata = Field(default_factory=CompareMetadata)
+    quality_signals: RunQualitySignals = Field(default_factory=RunQualitySignals)
+    product_metrics: ProductMetrics = Field(default_factory=ProductMetrics)
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     completed_at: str | None = None

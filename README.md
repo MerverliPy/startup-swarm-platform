@@ -20,7 +20,7 @@ It includes:
 
 ## Core product idea
 
-Users log in with GitHub, submit a task, and the platform runs a controlled specialist workflow:
+Users log in with GitHub, submit a task, and the platform runs a controlled specialist workflow through an execution console that keeps review state visible:
 
 1. Orchestrator
 2. Builder
@@ -29,7 +29,7 @@ Users log in with GitHub, submit a task, and the platform runs a controlled spec
 5. Optional marketer
 6. Validator
 
-The platform stores run state, limits loops, and keeps the control plane deterministic.
+The platform stores run state, limits loops, keeps the control plane deterministic, and surfaces approvals, confidence, risk, and follow-up actions from explicit run state.
 
 ## Authentication model
 
@@ -88,6 +88,12 @@ The backend now runs a real bounded flow in `apps/api/app/services/swarm.py`:
 - `require_repo_context=true` currently fails because repo retrieval is not wired into the run path yet.
 - `production_ready` moves the run to `needs_approval` if infrastructure risks remain.
 - otherwise the run can pass with explicit artifacts for every stage.
+
+### Grounded quality and retention loops
+
+- critic and validator artifacts now record additive risk and confidence fields grounded in blockers, major issues, repair attempts, and approval state
+- runs also record product metric events for activation, success, approval-required, approval-completed, rerun-created, and compare-ready when those states are explicitly present
+- the dashboard surfaces an approval inbox and suggested next actions from stored run state instead of opaque generated copy
 
 ## Quick start
 

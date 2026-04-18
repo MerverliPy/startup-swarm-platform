@@ -24,8 +24,12 @@ Authority notes:
 - [x] Phase 08 — Add approval, history, templates, and compare foundations (`docs/releases/phase-08-add-approval-history-templates-and-compare-foundations.md`)
 - [x] Phase 09 — Ship iPhone-first PWA shell and mobile navigation (`docs/releases/phase-09-ship-iphone-first-pwa-shell-and-mobile-navigation.md`)
 - [-] Phase 10 — Improve intelligence quality, metrics, and retention loops (`docs/releases/phase-10-improve-intelligence-quality-metrics-and-retention-loops.md`)
-- [~] Phase 11 — Land grounded quality signals and dashboard retention primitives (`docs/releases/phase-11-land-grounded-quality-signals-and-dashboard-retention-primitives.md`)
+- [x] Phase 11 — Land grounded quality signals and dashboard retention primitives (`docs/releases/phase-11-land-grounded-quality-signals-and-dashboard-retention-primitives.md`)
 
 ## Backlog follow-up phases
 - [x] dry-run-internal-workflow-on-doc-only-change
 - [ ] add-repo-path-risk-catalog
+- [ ] harden-protected-path-enforcement
+- [ ] require-validation-evidence-in-phase-files
+- [ ] add-phase-state-sync-guard
+- [ ] tighten-autoflow-selection-guardrails
