@@ -10,7 +10,7 @@ Add the install, layout, and navigation foundations required for Startup Swarm P
 
 ## Why this phase is next
 
-The PRD makes iPhone/PWA quality a major product requirement, but the current web app has no manifest, no Apple install metadata, no bottom navigation, no safe-area-aware layout, and no install coaching.
+The repo is complete through the approval/history/template foundation, but the next PRD-aligned gap is shell quality on iPhone. The current web app still lacks a manifest, Apple install metadata, safe-area-aware spacing, and thumb-reachable primary navigation.
 
 ## Primary files
 
@@ -31,35 +31,36 @@ The PRD makes iPhone/PWA quality a major product requirement, but the current we
 
 ## Risk
 
-Medium. This phase changes shell-level web behavior, metadata, and navigation. The main risk is introducing install or layout polish that conflicts with the existing dashboard structure.
+Medium. This phase changes shell-level web behavior, metadata, and navigation. The main risk is introducing install or layout polish that conflicts with the existing dashboard structure or regresses the current desktop experience.
 
 ## Rollback note
 
-Revert the manifest, mobile metadata, shell CSS, navigation components, and install coach if standalone mode or narrow-screen behavior regresses.
+Revert the manifest, Apple metadata, install coach, safe-area layout primitives, and mobile navigation if standalone mode or narrow-screen behavior regresses.
 
 ## In scope
 
 - add a web manifest and Apple mobile web app metadata
-- add an iPhone install coach for manual Add to Home Screen flow
-- add safe-area-aware layout primitives
-- add bottom navigation or another thumb-reachable primary navigation model
-- rework narrow-screen dashboard layout to avoid raw wide blocks and cramped desktop assumptions
+- add an iPhone install coach for the manual Add to Home Screen flow
+- add safe-area-aware layout primitives and shell spacing
+- add a bounded mobile-first primary navigation surface
+- rework narrow-screen landing and dashboard layout to avoid wide desktop assumptions
 
 ## Out of scope
 
 - deep offline task execution
 - full offline artifact synchronization
 - native App Store packaging
-- large-scale visual redesign unrelated to mobile shell behavior
+- major redesign of run semantics, approval logic, or API behavior
+- auth/session changes unrelated to the mobile shell
 
 ## Tasks
 
-- add `apps/web/app/manifest.ts` and required iOS metadata in the app shell
-- add `apple-touch-icon` and any required static assets
+- add `apps/web/app/manifest.ts` and wire required PWA metadata through the app shell
+- add `apple-touch-icon` and any required static install assets
 - implement safe-area-aware spacing in `layout.tsx` and `globals.css`
 - add a bounded mobile-first navigation surface for top-level destinations
-- add install coaching logic that is shown only when relevant on iPhone Safari
-- keep the shell changes compatible with the earlier structured dashboard phases
+- add install coaching logic that appears only when relevant on iPhone Safari
+- keep dashboard and structured run surfaces readable on narrow screens without breaking the current desktop layout
 
 ## Validation command
 
