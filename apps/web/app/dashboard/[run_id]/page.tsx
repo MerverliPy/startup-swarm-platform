@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import ApprovalActions from "@/components/approval-actions";
 import RunReviewTabs from "@/components/run-review-tabs";
 import RunSummaryCard from "@/components/run-summary-card";
 import { getSwarmRun } from "@/lib/api";
@@ -25,6 +26,7 @@ export default async function RunDetailPage({
       </section>
 
       <RunSummaryCard run={run} />
+      <ApprovalActions run={run} />
       <RunReviewTabs run={run} />
     </main>
   );

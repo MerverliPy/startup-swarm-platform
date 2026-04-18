@@ -4,8 +4,10 @@ import {
   getRunApprovalState,
   getRunDurationLabel,
   getRunIssueCounts,
+  getRunProjectLabel,
   getRunProviderLabel,
   getRunStatusLabel,
+  getRunTemplateLabel,
   getRunTypeLabel,
   type SwarmRun,
 } from "@/lib/api";
@@ -85,6 +87,8 @@ export default function RunSummaryCard({ run, href }: RunSummaryCardProps) {
       >
         <Stat label="Run type" value={getRunTypeLabel(run)} />
         <Stat label="Provider" value={getRunProviderLabel(run)} />
+        <Stat label="Project" value={getRunProjectLabel(run)} />
+        <Stat label="Template" value={getRunTemplateLabel(run)} />
         <Stat label="Approval" value={getRunApprovalState(run)} />
         <Stat label="Timing" value={getRunDurationLabel(run)} />
         <Stat label="Blockers" value={String(counts.blockers)} />

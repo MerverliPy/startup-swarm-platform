@@ -1,8 +1,11 @@
 # Phase 08 — Add approval, history, templates, and compare foundations
 
-Status: pending
+Status: complete
 Release: v0.3.0
 Phase file: docs/releases/phase-08-add-approval-history-templates-and-compare-foundations.md
+Phase kind: product-touching
+Protected path approval required: yes
+Protected path approval granted: yes
 
 ## Goal
 
@@ -11,6 +14,33 @@ Turn run results into a reusable workflow by adding approval actions, better his
 ## Why this phase is next
 
 After the dashboard becomes structured-first, the product still lacks the repeat-use loop described in the PRD. Users need saved context and actionable review decisions, not just readable one-off results.
+
+## Explicit approval for protected product paths
+
+User approval is granted for this phase to modify only the bounded product paths required to complete Phase 08.
+
+Approved protected paths for this phase:
+- `apps/web/**`
+- `apps/api/**`
+- `docs/architecture.md`
+
+Approved primary files for this phase:
+- `apps/api/app/models/schemas.py`
+- `apps/api/app/routers/swarm.py`
+- `apps/api/app/services/swarm.py`
+- `apps/web/app/dashboard/page.tsx`
+- `apps/web/app/dashboard/[run_id]/page.tsx`
+- `apps/web/components/task-form.tsx`
+- `apps/web/components/approval-actions.tsx`
+- `apps/web/components/template-launcher.tsx`
+- `apps/web/components/run-history-filters.tsx`
+- `docs/architecture.md`
+
+Approval constraints:
+- do not modify `apps/copilot-cli/**`
+- do not modify auth/session boundary files unless strictly required by the active phase and explicitly re-approved
+- do not modify env files, `docker-compose.yml`, `README.md`, `docs/github-copilot.md`, or setup scripts as part of this phase
+- keep changes bounded to the minimum necessary to satisfy Phase 08 acceptance criteria
 
 ## Primary files
 
@@ -67,13 +97,21 @@ Revert the approval action handlers, template/history UI, and any additive schem
 
 ## Validation
 
-Status: pending
+Status: PASS
 Evidence:
-- not run yet
+- internal workflow validation: `bash scripts/dev/workflow-check.sh` -> PASS
+- product runtime validation: `python -m compileall apps/api/app` -> PASS
+- product runtime validation: `(cd apps/web && npm run build)` -> PASS
+- protected path check: changed product files stayed within the explicitly approved `apps/web/**` and `apps/api/**` paths; no unapproved protected product paths were modified
+- scope check: implementation stays within the bounded Phase 08 approval/history/templates/compare-foundation scope and does not introduce out-of-scope collaboration, export, billing, or mobile-shell work
+- acceptance evidence: `needs_approval` runs now expose explicit approve/reject/request-revision/rerun-with-edits controls, and `apps/web/components/approval-actions.tsx` submits editable title/goal/constraints for reruns through the canonical action endpoint
+- acceptance evidence: dashboard history supports status, approval-state, provider, and recency filtering, and runs remain grouped by status using stable stored metadata
+- acceptance evidence: the command surface exposes bounded starter templates, and runs now carry compare-ready `project_id`, `template_id`, `compare_key`, and `source_run_id` metadata for later grouping/compare work
+- canonical path check: new approval actions flow through `apps/web/app/api/swarm/runs/[run_id]/actions/route.ts` -> `apps/api/app/routers/swarm.py` -> `apps/api/app/services/swarm.py` and continue using the existing run persistence model
 Blockers:
-- not validated yet
+- none
 Ready to ship:
-- no
+- yes
 
 ## Acceptance criteria
 
@@ -85,8 +123,9 @@ Ready to ship:
 
 ## Release notes
 
-- pending
+- Added canonical approval actions and editable rerun support for `needs_approval` runs.
+- Added dashboard history filters, starter templates, and compare-ready run metadata for later grouping work.
 
 ## Completion summary
 
-- pending
+- Phase 08 is complete and validated; runs now support reusable approval, template launch, filtered history, and compare-ready metadata on the existing persistence path.

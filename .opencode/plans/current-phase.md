@@ -1,58 +1,59 @@
-# Phase 07 — Productize command surface and run review
+# Phase 08 — Add approval, history, templates, and compare foundations
 
 Status: complete
 Release: v0.3.0
-Phase file: docs/releases/phase-07-productize-command-surface-and-run-review.md
-Protected path approval granted: yes
-Protected path approval required: yes
+Phase file: docs/releases/phase-08-add-approval-history-templates-and-compare-foundations.md
 Phase kind: product-touching
+Protected path approval required: yes
+Protected path approval granted: yes
 
 ## Goal
 
-Replace the raw-JSON-first dashboard with a structured command surface and a structured run-review experience that exposes stages, timeline, review findings, and approval state without requiring users to read full artifacts.
+Turn run results into a reusable workflow by adding approval actions, better history/search structure, template launch support, and compare-ready run metadata.
 
 ## Why this phase is next
 
-Phases 05 and 06 closed the highest-risk runtime and auth gaps. The largest remaining PRD gap is now the product experience itself: the dashboard still behaves like a debug console, the launch form is too minimal, and recent runs are still not presented through a structured review-oriented surface.
+After the dashboard becomes structured-first, the product still lacks the repeat-use loop described in the PRD. Users need saved context and actionable review decisions, not just readable one-off results.
 
 ## Explicit approval for protected product paths
 
-User approval is granted for this phase to modify only the bounded product paths required to complete Phase 07.
+User approval is granted for this phase to modify only the bounded product paths required to complete Phase 08.
 
 Approved protected paths for this phase:
 - `apps/web/**`
 - `apps/api/**`
+- `docs/architecture.md`
 
 Approved primary files for this phase:
-- `apps/web/components/task-form.tsx`
+- `apps/api/app/models/schemas.py`
+- `apps/api/app/routers/swarm.py`
+- `apps/api/app/services/swarm.py`
 - `apps/web/app/dashboard/page.tsx`
 - `apps/web/app/dashboard/[run_id]/page.tsx`
-- `apps/web/components/run-summary-card.tsx`
-- `apps/web/components/run-review-tabs.tsx`
-- `apps/web/components/run-stage-timeline.tsx`
-- `apps/web/components/run-finding-list.tsx`
-- `apps/web/lib/api.ts`
-- `apps/api/app/models/schemas.py`
-- `apps/api/app/services/swarm.py`
+- `apps/web/components/task-form.tsx`
+- `apps/web/components/approval-actions.tsx`
+- `apps/web/components/template-launcher.tsx`
+- `apps/web/components/run-history-filters.tsx`
+- `docs/architecture.md`
 
 Approval constraints:
 - do not modify `apps/copilot-cli/**`
 - do not modify auth/session boundary files unless strictly required by the active phase and explicitly re-approved
-- do not modify env files, `docker-compose.yml`, `README.md`, `docs/architecture.md`, `docs/github-copilot.md`, or setup scripts as part of this phase
-- keep changes bounded to the minimum necessary to satisfy Phase 07 acceptance criteria
+- do not modify env files, `docker-compose.yml`, `README.md`, `docs/github-copilot.md`, or setup scripts as part of this phase
+- keep changes bounded to the minimum necessary to satisfy Phase 08 acceptance criteria
 
 ## Primary files
 
-- `apps/web/components/task-form.tsx`
+- `apps/api/app/models/schemas.py`
+- `apps/api/app/routers/swarm.py`
+- `apps/api/app/services/swarm.py`
 - `apps/web/app/dashboard/page.tsx`
 - `apps/web/app/dashboard/[run_id]/page.tsx`
-- `apps/web/components/run-summary-card.tsx`
-- `apps/web/components/run-review-tabs.tsx`
-- `apps/web/components/run-stage-timeline.tsx`
-- `apps/web/components/run-finding-list.tsx`
-- `apps/web/lib/api.ts`
-- `apps/api/app/models/schemas.py`
-- `apps/api/app/services/swarm.py`
+- `apps/web/components/task-form.tsx`
+- `apps/web/components/approval-actions.tsx`
+- `apps/web/components/template-launcher.tsx`
+- `apps/web/components/run-history-filters.tsx`
+- `docs/architecture.md`
 
 ## Expected max files changed
 
@@ -60,41 +61,39 @@ Approval constraints:
 
 ## Risk
 
-Medium. This phase changes product UI and additive run-shape expectations, but it should not alter the already-stabilized auth or route boundaries beyond the data fields required for structured review.
+Medium. This phase adds new product-state transitions and stored metadata. The main risk is over-designing state before the run model has proven stable in the structured-review phase.
 
 ## Rollback note
 
-Revert the new dashboard and run-detail UI components and any additive schema fields introduced solely for structured review.
+Revert the approval action handlers, template/history UI, and any additive schema fields that support compare-ready metadata.
 
 ## In scope
 
-- expand the create-run form beyond title/goal/comma-separated constraints
-- add explicit run type and provider visibility where supported by the canonical runtime
-- add structured run cards to the dashboard
-- add a run-detail surface with Summary, Timeline, Review, and Raw JSON views
-- expose blockers, major issues, minor issues, repair summary, and approval state as first-class UI elements
-- preserve raw JSON as a secondary advanced view only
+- add approval actions: approve, reject, request revision, rerun with edits
+- add run-history grouping and filters once shared persistence is stable
+- add template launch support using the PRD’s initial template list
+- add compare-ready metadata even if full visual diffing is still bounded
+- introduce workspace or project identifiers only at the minimal level required for reuse
 
 ## Out of scope
 
-- approval action mutations
-- workspaces, templates, compare, or export/share
-- offline shell or install coach
-- deeper intelligence-quality work beyond additive display fields
+- team collaboration or broad multi-user routing
+- billing or enterprise administration
+- full share/export packaging beyond a bounded first release
+- iPhone/PWA shell work
 
 ## Tasks
 
-- extend `TaskRequest` and `RunState` only as needed to support structured launch and structured review
-- derive provider, issue counts, and stage state from current artifacts where possible instead of adding avoidable schema churn
-- replace the dashboard’s raw JSON dump with summary cards and status groupings
-- replace the form result `<pre>` with a redirect or link into a run-detail experience
-- add the run-detail route and tabs for Summary, Timeline, Review, and Raw JSON
-- surface validator rationale, issue counts, stage progression, and repair state as explicit UI state
-- keep raw artifact inspection available but no longer default
+- extend run schemas with review-decision metadata and compare-ready identifiers
+- add approval-action endpoints or route handlers tied to the canonical runtime path
+- add history filters for status, approval state, provider, and recency
+- add template launch support for the first PRD template set
+- add a minimal workspace or project field only if needed for durable reruns and grouping
+- keep any compare UI bounded to structured metadata, not raw artifact diffs
 
 ## Validation command
 
-`bash scripts/dev/workflow-check.sh && python -m compileall apps/api/app && (cd apps/web && npm run build)`
+`python -m compileall apps/api/app && (cd apps/web && npm run build)`
 
 ## Validation
 
@@ -103,10 +102,12 @@ Evidence:
 - internal workflow validation: `bash scripts/dev/workflow-check.sh` -> PASS
 - product runtime validation: `python -m compileall apps/api/app` -> PASS
 - product runtime validation: `(cd apps/web && npm run build)` -> PASS
-- protected path check: no unapproved protected product paths were changed; product changes stayed within approved `apps/web/**` and `apps/api/**` bounds
-- scope check: product implementation stayed within the bounded Phase 07 command-surface and run-review scope; remaining workflow changes are limited to active phase/registry metadata
-- acceptance evidence: dashboard recent runs render grouped summary cards instead of a default raw JSON block, and successful create-run flow redirects into `/dashboard/[run_id]`
-- acceptance evidence: users can see status, provider, timing, approval state, and issue counts from summary cards, and run detail provides Summary, Timeline, Review, and Raw JSON tabs with raw JSON as a secondary view
+- protected path check: changed product files stayed within the explicitly approved `apps/web/**` and `apps/api/**` paths; no unapproved protected product paths were modified
+- scope check: implementation stays within the bounded Phase 08 approval/history/templates/compare-foundation scope and does not introduce out-of-scope collaboration, export, billing, or mobile-shell work
+- acceptance evidence: `needs_approval` runs now expose explicit approve/reject/request-revision/rerun-with-edits controls, and `apps/web/components/approval-actions.tsx` submits editable title/goal/constraints for reruns through the canonical action endpoint
+- acceptance evidence: dashboard history supports status, approval-state, provider, and recency filtering, and runs remain grouped by status using stable stored metadata
+- acceptance evidence: the command surface exposes bounded starter templates, and runs now carry compare-ready `project_id`, `template_id`, `compare_key`, and `source_run_id` metadata for later grouping/compare work
+- canonical path check: new approval actions flow through `apps/web/app/api/swarm/runs/[run_id]/actions/route.ts` -> `apps/api/app/routers/swarm.py` -> `apps/api/app/services/swarm.py` and continue using the existing run persistence model
 Blockers:
 - none
 Ready to ship:
@@ -114,17 +115,17 @@ Ready to ship:
 
 ## Acceptance criteria
 
-- the dashboard no longer renders recent runs as a raw JSON block by default
-- successful create-run flow leads users into a structured run-review path
-- users can see status, provider, duration or elapsed state, approval state, and issue counts without opening raw JSON
-- raw JSON remains available as a secondary advanced surface
-- the command surface supports bounded run metadata beyond the current title/goal/constraint stub
+- `needs_approval` runs expose explicit next actions instead of a passive label only
+- the dashboard supports history filtering and recency ordering based on stable metadata
+- users can launch at least one bounded template from the command surface
+- runs carry enough metadata to support later compare and workspace grouping work
+- no new feature bypasses the canonical runtime or persistence path established earlier
 
 ## Release notes
 
-- Replaced the dashboard raw JSON-first run list with grouped structured summary cards and added a structured run-detail route.
-- Expanded create-run inputs and surfaced provider, approval state, timeline, findings, and raw JSON as a secondary review tab.
+- Added canonical approval actions and editable rerun support for `needs_approval` runs.
+- Added dashboard history filters, starter templates, and compare-ready run metadata for later grouping work.
 
 ## Completion summary
 
-- Phase 07 is complete and validated; the dashboard now supports structured launch and structured run review without requiring users to inspect raw artifacts by default.
+- Phase 08 is complete and validated; runs now support reusable approval, template launch, filtered history, and compare-ready metadata on the existing persistence path.

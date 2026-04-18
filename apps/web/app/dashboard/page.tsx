@@ -1,14 +1,23 @@
 import Link from "next/link";
 import RunSummaryCard from "@/components/run-summary-card";
+import RunHistoryFilters, { type RunHistoryFiltersValue } from "@/components/run-history-filters";
 import TaskForm from "@/components/task-form";
 import { auth, signOut } from "@/lib/auth";
-import { getRunStatusLabel, listSwarmRuns } from "@/lib/api";
+import { getRunApprovalState, getRunStatusLabel, listSwarmRuns } from "@/lib/api";
 import { getAiSettings } from "@/lib/ai-settings";
 import SignInButton from "@/components/sign-in-button";
 
 const statusOrder = ["running", "needs_approval", "failed", "passed", "queued"] as const;
 
-export default async function DashboardPage() {
+function readFilter(value: string | string[] | undefined, fallback: string) {
+  return typeof value === "string" && value ? value : fallback;
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const session = await auth();
   const user = session?.user;
 
@@ -24,12 +33,40 @@ export default async function DashboardPage() {
   }
 
   const runs = await listSwarmRuns();
+  const params = (await searchParams) || {};
   const label = user.login || user.name || user.email || user.id;
   const ai = getAiSettings();
+  const filters: RunHistoryFiltersValue = {
+    status: readFilter(params.status, "all"),
+    approval: readFilter(params.approval, "all"),
+    provider: readFilter(params.provider, "all"),
+    recency: readFilter(params.recency, "newest") === "oldest" ? "oldest" : "newest",
+  };
+  const filteredRuns = runs
+    .filter((run) => {
+      if (filters.status !== "all" && run.status !== filters.status) {
+        return false;
+      }
+
+      if (filters.provider !== "all" && run.provider !== filters.provider) {
+        return false;
+      }
+
+      if (filters.approval !== "all" && run.review?.state !== filters.approval) {
+        return false;
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      const aTime = new Date(a.created_at).getTime();
+      const bTime = new Date(b.created_at).getTime();
+      return filters.recency === "oldest" ? aTime - bTime : bTime - aTime;
+    });
   const groupedRuns = statusOrder
     .map((status) => ({
       status,
-      items: runs.filter((run) => run.status === status),
+      items: filteredRuns.filter((run) => run.status === status),
     }))
     .filter((group) => group.items.length > 0);
 
@@ -67,8 +104,9 @@ export default async function DashboardPage() {
 
       <section>
         <h3>Recent runs</h3>
-        {runs.length === 0 ? (
-          <p>No runs yet.</p>
+        <RunHistoryFilters value={filters} />
+        {filteredRuns.length === 0 ? (
+          <p>{runs.length === 0 ? "No runs yet." : "No runs match the active filters."}</p>
         ) : (
           <div style={{ display: "grid", gap: 20 }}>
             {groupedRuns.map((group) => (
@@ -77,7 +115,9 @@ export default async function DashboardPage() {
                   <h4 style={{ margin: 0, textTransform: "capitalize" }}>
                     {getRunStatusLabel(group.status)}
                   </h4>
-                  <span>{group.items.length} run(s)</span>
+                  <span>
+                    {group.items.length} run(s) · {group.items.filter((run) => getRunApprovalState(run) === "Human approval required" || run.review?.state === "pending").length} pending approval
+                  </span>
                 </div>
 
                 <div style={{ display: "grid", gap: 12 }}>

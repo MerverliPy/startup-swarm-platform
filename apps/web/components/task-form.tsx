@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { createSwarmRun } from "@/lib/api";
+import TemplateLauncher, { type Template } from "@/components/template-launcher";
 
 type TaskFormProps = {
   provider: string;
@@ -24,8 +25,20 @@ export default function TaskForm({ provider }: TaskFormProps) {
   const [runType, setRunType] = useState<"bounded_swarm">("bounded_swarm");
   const [requireMarketing, setRequireMarketing] = useState(false);
   const [requireRepoContext, setRequireRepoContext] = useState(false);
+  const [templateId, setTemplateId] = useState<string | undefined>(undefined);
+  const [projectId, setProjectId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function applyTemplate(template: Template) {
+    setTitle(template.title);
+    setGoal(template.goal);
+    setConstraints(template.constraints.join("\n"));
+    setRequireMarketing(Boolean(template.requireMarketing));
+    setRequireRepoContext(Boolean(template.requireRepoContext));
+    setTemplateId(template.id);
+    setProjectId(template.id);
+  }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,6 +53,8 @@ export default function TaskForm({ provider }: TaskFormProps) {
         run_type: runType,
         require_marketing: requireMarketing,
         require_repo_context: requireRepoContext,
+        template_id: templateId,
+        project_id: projectId || undefined,
       });
       router.push(`/dashboard/${run.run_id}`);
     } catch (err) {
@@ -51,6 +66,8 @@ export default function TaskForm({ provider }: TaskFormProps) {
 
   return (
     <form onSubmit={onSubmit} style={{ display: "grid", gap: 12, maxWidth: 720 }}>
+      <TemplateLauncher onSelect={applyTemplate} />
+
       <p style={{ margin: 0 }}>
         Provider for this run: <strong>{provider}</strong>
       </p>
@@ -92,6 +109,15 @@ export default function TaskForm({ provider }: TaskFormProps) {
           onChange={(e) => setConstraints(e.target.value)}
           placeholder="Add one constraint per line or separate with commas"
           rows={4}
+        />
+      </label>
+
+      <label style={{ display: "grid", gap: 6 }}>
+        <span>Project/workspace key</span>
+        <input
+          value={projectId}
+          onChange={(e) => setProjectId(e.target.value)}
+          placeholder="Optional stable key for reruns and compare-ready history"
         />
       </label>
 

@@ -6,9 +6,31 @@ export type SwarmRun = {
   constraints: string[];
   run_type?: string;
   provider?: "deterministic" | "openai" | string;
+  require_marketing?: boolean;
+  require_repo_context?: boolean;
   plan: string[];
   artifacts: Record<string, unknown>;
   attempts: Record<string, unknown>;
+  review?: {
+    state?: string;
+    available_actions?: string[];
+    action_history?: Array<{
+      action: string;
+      note?: string | null;
+      created_at: string;
+      actor: string;
+      resulting_status: string;
+      rerun_run_id?: string | null;
+    }>;
+    last_note?: string | null;
+    last_updated_at?: string | null;
+  };
+  compare?: {
+    project_id?: string | null;
+    template_id?: string | null;
+    compare_key?: string | null;
+    source_run_id?: string | null;
+  };
   created_at: string;
   completed_at?: string | null;
 };
@@ -99,6 +121,18 @@ export function getRunDurationLabel(run: SwarmRun): string {
 }
 
 export function getRunApprovalState(run: SwarmRun): string {
+  if (run.review?.state === "approved") {
+    return "Approved";
+  }
+
+  if (run.review?.state === "rejected") {
+    return "Rejected";
+  }
+
+  if (run.review?.state === "revision_requested") {
+    return "Revision requested";
+  }
+
   const validator = asRecord(run.artifacts.validator);
 
   if (validator?.human_approval_required === true || run.status === "needs_approval") {
@@ -110,6 +144,14 @@ export function getRunApprovalState(run: SwarmRun): string {
   }
 
   return "No approval required";
+}
+
+export function getRunProjectLabel(run: SwarmRun): string {
+  return run.compare?.project_id || "general";
+}
+
+export function getRunTemplateLabel(run: SwarmRun): string {
+  return run.compare?.template_id || "custom";
 }
 
 export function getValidatorRationale(run: SwarmRun): string {
@@ -214,8 +256,28 @@ export async function createSwarmRun(payload: {
   run_type: "bounded_swarm";
   require_marketing: boolean;
   require_repo_context: boolean;
+  template_id?: string;
+  project_id?: string;
+  source_run_id?: string;
 }) {
   return fetchSwarmApi<SwarmRun>("/api/swarm/runs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function applySwarmRunAction(
+  runId: string,
+  payload: {
+    action: "approve" | "reject" | "request_revision" | "rerun_with_edits";
+    note?: string;
+    title?: string;
+    goal?: string;
+    constraints?: string[];
+  }
+) {
+  return fetchSwarmApi<SwarmRun>(`/api/swarm/runs/${encodeURIComponent(runId)}/actions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

@@ -21,7 +21,7 @@ Authority notes:
 - [x] Phase 05 — Align runtime route and persistence foundation (`docs/releases/phase-05-align-runtime-route-and-persistence-foundation.md`)
 - [x] Phase 06 — Secure session boundaries and gate debug surfaces (`docs/releases/phase-06-secure-session-boundaries-and-gate-debug-surfaces.md`)
 - [x] Phase 07 — Productize command surface and run review (`docs/releases/phase-07-productize-command-surface-and-run-review.md`)
-- [ ] Phase 08 — Add approval, history, templates, and compare foundations (`docs/releases/phase-08-add-approval-history-templates-and-compare-foundations.md`)
+- [x] Phase 08 — Add approval, history, templates, and compare foundations (`docs/releases/phase-08-add-approval-history-templates-and-compare-foundations.md`)
 - [ ] Phase 09 — Ship iPhone-first PWA shell and mobile navigation (`docs/releases/phase-09-ship-iphone-first-pwa-shell-and-mobile-navigation.md`)
 - [ ] Phase 10 — Improve intelligence quality, metrics, and retention loops (`docs/releases/phase-10-improve-intelligence-quality-metrics-and-retention-loops.md`)
 

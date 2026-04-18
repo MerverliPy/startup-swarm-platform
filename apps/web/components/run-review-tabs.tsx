@@ -8,7 +8,9 @@ import {
   getRunApprovalState,
   getRunDurationLabel,
   getRunIssueCounts,
+  getRunProjectLabel,
   getRunProviderLabel,
+  getRunTemplateLabel,
   getRunTypeLabel,
   getValidatorRationale,
   getRunTimeline,
@@ -163,6 +165,14 @@ export default function RunReviewTabs({ run }: RunReviewTabsProps) {
               <p>{getRunProviderLabel(run)}</p>
             </div>
             <div>
+              <strong>Project</strong>
+              <p>{getRunProjectLabel(run)}</p>
+            </div>
+            <div>
+              <strong>Template</strong>
+              <p>{getRunTemplateLabel(run)}</p>
+            </div>
+            <div>
               <strong>Approval state</strong>
               <p>{getRunApprovalState(run)}</p>
             </div>
@@ -195,6 +205,23 @@ export default function RunReviewTabs({ run }: RunReviewTabsProps) {
                   <li key={constraint}>{constraint}</li>
                 ))}
               </ul>
+            )}
+          </section>
+
+          <section style={{ display: "grid", gap: 8 }}>
+            <h3 style={{ margin: 0 }}>Review history</h3>
+            {run.review?.action_history?.length ? (
+              <ul style={{ margin: 0, paddingLeft: 20, display: "grid", gap: 8 }}>
+                {run.review.action_history.map((entry, index) => (
+                  <li key={`${entry.action}-${entry.created_at}-${index}`}>
+                    <strong>{entry.action.replace(/_/g, " ")}</strong> · {entry.resulting_status}
+                    {entry.note ? ` · ${entry.note}` : ""}
+                    {entry.rerun_run_id ? ` · rerun: ${entry.rerun_run_id}` : ""}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p style={{ margin: 0 }}>No operator review actions yet.</p>
             )}
           </section>
         </div>
