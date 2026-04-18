@@ -1,40 +1,39 @@
-# Phase 10 — Improve intelligence quality, metrics, and retention loops
+# Phase 11 — Land grounded quality signals and dashboard retention primitives
 
 Status: pending
-Release: v0.5.0
-Phase file: docs/releases/phase-10-improve-intelligence-quality-metrics-and-retention-loops.md
+Release: v0.5.1
+Phase file: docs/releases/phase-11-land-grounded-quality-signals-and-dashboard-retention-primitives.md
 Phase kind: product-touching
 Protected path approval required: yes
 Protected path approval granted: yes
 
 ## Goal
 
-Increase output quality and repeat usage by sharpening role-specific schemas, adding risk and confidence indicators, instrumenting core product metrics, and surfacing pending work such as approval inbox and suggested next actions.
+Land the smallest complete slice of the quality-and-retention roadmap by adding grounded run-quality fields, exposing them in the dashboard and run detail surfaces, and shipping the missing approval inbox and suggested next actions components.
 
 ## Why this phase is next
 
-After the runtime, security, structured UX, reuse loop, and iPhone shell are in place, the next PRD step is differentiation: outputs must feel more grounded, the product must measure its own performance, and returning users should see meaningful pending work instead of a static dashboard.
+The original Phase 10 was too broad and remains incomplete. The correct next step is to ship a smaller bounded phase that adds the missing structured fields and dashboard primitives the product already expects, without claiming the broader roadmap is done.
 
 ## Explicit approval for protected product paths
 
-User approval is granted for this phase to modify only the bounded product paths required to complete Phase 10.
+User approval is granted for this phase to modify only the bounded product paths required to complete Phase 11.
 
 Approved protected paths for this phase:
 - `apps/web/**`
 - `apps/api/**`
 - `README.md`
 - `docs/architecture.md`
-- `docs/github-copilot.md`
 
 Approved primary files for this phase:
+- `apps/api/app/models/schemas.py`
 - `apps/api/app/services/openai_swarm.py`
 - `apps/api/app/services/swarm.py`
-- `apps/api/app/models/schemas.py`
 - `apps/web/app/dashboard/page.tsx`
 - `apps/web/app/dashboard/[run_id]/page.tsx`
 - `apps/web/components/approval-inbox.tsx`
 - `apps/web/components/suggested-next-actions.tsx`
-- `docs/github-copilot.md`
+- `apps/web/lib/api.ts`
 - `docs/architecture.md`
 - `README.md`
 
@@ -42,18 +41,18 @@ Approval constraints:
 - do not modify `apps/copilot-cli/**`
 - do not modify auth/session boundary files unless strictly required by the active phase and explicitly re-approved
 - do not modify env files, setup scripts, or `docker-compose.yml` as part of this phase
-- keep changes bounded to intelligence quality, grounded metrics, dashboard retention loops, and related documentation updates
+- keep changes bounded to grounded quality signals, dashboard retention primitives, and related product documentation
 
 ## Primary files
 
+- `apps/api/app/models/schemas.py`
 - `apps/api/app/services/openai_swarm.py`
 - `apps/api/app/services/swarm.py`
-- `apps/api/app/models/schemas.py`
 - `apps/web/app/dashboard/page.tsx`
 - `apps/web/app/dashboard/[run_id]/page.tsx`
 - `apps/web/components/approval-inbox.tsx`
 - `apps/web/components/suggested-next-actions.tsx`
-- `docs/github-copilot.md`
+- `apps/web/lib/api.ts`
 - `docs/architecture.md`
 - `README.md`
 
@@ -63,37 +62,40 @@ Approval constraints:
 
 ## Risk
 
-Medium. This phase adds new product interpretation layers and instrumentation. The main risk is adding metrics or quality signals that are not grounded in the run schema created by earlier phases.
+Medium. This phase introduces additive schema fields and new dashboard interpretation layers. The main risk is showing quality or action signals that are not explicitly grounded in structured run state.
 
 ## Rollback note
 
-Revert the additive output-quality fields, analytics hooks, and retention-focused dashboard sections if they introduce noise or ambiguity.
+Revert the additive schema changes and the new dashboard components if they introduce ambiguity or regress the current review flow.
 
 ## In scope
 
-- sharpen role-specific prompt and output schema contracts
-- add confidence or risk indicators where they can be grounded in structured run data
-- add minimal product metrics instrumentation aligned to the PRD
-- add approval inbox and suggested next actions using the stabilized review and history model
-- update product docs to reflect the differentiated execution-console model
+- add additive grounded confidence and risk fields to the run model
+- populate those fields in deterministic and OpenAI-backed execution paths
+- add approval inbox and suggested next actions components driven by explicit run state
+- expose the new fields in dashboard and run detail surfaces
+- update bounded product documentation to match the new execution-console behavior
 
 ## Out of scope
 
-- broad enterprise collaboration
-- billing, monetization implementation, or App Store distribution
-- speculative benchmarking systems beyond the bounded compare-ready model
+- env or setup script changes
+- auth/session refactors
+- sidecar or `apps/copilot-cli/**` changes
+- broad enterprise collaboration, billing, or speculative benchmarking systems
 
 ## Tasks
 
-- add additive validator or critic fields for confidence and risk only where structured data supports them
-- instrument activation, run-success, approval, rerun, and compare-related metrics at the product surface
-- add an approval inbox section to the dashboard once approval actions are stable
-- add suggested next actions only from explicit run state, not opaque heuristic text generation
-- align `README.md`, `docs/architecture.md`, and `docs/github-copilot.md` with the differentiated product model
+- extend the API run schemas with additive grounded quality fields
+- update the deterministic swarm path to emit grounded confidence and risk values
+- update the OpenAI-backed swarm path to emit the same additive fields
+- create `approval-inbox.tsx`
+- create `suggested-next-actions.tsx`
+- wire the dashboard and run detail views to render the new fields and components
+- update `docs/architecture.md` and `README.md`
 
 ## Validation command
 
-`python -m compileall apps/api/app && (cd apps/web && npm run build)`
+`python -m compileall apps/api/app && (cd apps/web && npm run build) && bash scripts/dev/workflow-check.sh`
 
 ## Validation
 
@@ -107,11 +109,12 @@ Ready to ship:
 
 ## Acceptance criteria
 
-- role-specific output quality is improved through explicit schema or prompt changes, not only copy changes
-- the product records at least the core activation, run-success, and approval metrics named in the PRD
-- returning users can see pending approvals or suggested next steps on the dashboard
-- risk or confidence indicators are grounded in structured run data rather than generic prose
-- product docs describe the platform as an execution console with review and approval loops, not a raw prompt runner
+- run schemas contain additive grounded confidence and risk fields
+- both swarm execution paths populate those fields
+- the dashboard shows a working approval inbox driven by explicit run state
+- the dashboard shows suggested next actions driven by explicit run state
+- the run detail page renders the new grounded quality signals without regressing the existing review surface
+- `python -m compileall apps/api/app`, `npm run build`, and `bash scripts/dev/workflow-check.sh` all pass
 
 ## Release notes
 

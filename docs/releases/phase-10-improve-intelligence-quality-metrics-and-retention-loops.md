@@ -1,6 +1,6 @@
 # Phase 10 — Improve intelligence quality, metrics, and retention loops
 
-Status: pending
+Status: blocked
 Release: v0.5.0
 Phase file: docs/releases/phase-10-improve-intelligence-quality-metrics-and-retention-loops.md
 
@@ -8,9 +8,11 @@ Phase file: docs/releases/phase-10-improve-intelligence-quality-metrics-and-rete
 
 Increase output quality and repeat usage by sharpening role-specific schemas, adding risk and confidence indicators, instrumenting core product metrics, and surfacing pending work such as approval inbox and suggested next actions.
 
-## Why this phase is next
+## Why this phase is blocked
 
-After the runtime, security, structured UX, reuse loop, and iPhone shell are in place, the next PRD step is differentiation: outputs must feel more grounded, the product must measure its own performance, and returning users should see meaningful pending work instead of a static dashboard.
+The original Phase 10 bundled too many product-touching concerns into one step. The repo is still missing the approval inbox and suggested-next-actions components, and the run schemas do not yet expose the grounded quality and metrics fields needed to satisfy this phase cleanly in one pass.
+
+This phase is therefore blocked and superseded by a smaller bounded execution phase that lands the missing product primitives without overstating completion.
 
 ## Primary files
 
@@ -31,60 +33,56 @@ After the runtime, security, structured UX, reuse loop, and iPhone shell are in 
 
 ## Risk
 
-Medium. This phase adds new product interpretation layers and instrumentation. The main risk is adding metrics or quality signals that are not grounded in the run schema created by earlier phases.
+Medium. The blocked scope mixed schema work, runtime instrumentation, dashboard retention loops, and documentation into a single release, which increased drift risk and made the phase too broad for a safe one-pass implementation.
 
 ## Rollback note
 
-Revert the additive output-quality fields, analytics hooks, and retention-focused dashboard sections if they introduce noise or ambiguity.
+Do not treat this phase as releasable work. Use the follow-up bounded phase instead.
 
 ## In scope
 
-- sharpen role-specific prompt and output schema contracts
-- add confidence or risk indicators where they can be grounded in structured run data
-- add minimal product metrics instrumentation aligned to the PRD
-- add approval inbox and suggested next actions using the stabilized review and history model
-- update product docs to reflect the differentiated execution-console model
+- retain the historical intent of the original quality-and-retention milestone
+- preserve the original target files and product direction for traceability
 
 ## Out of scope
 
-- broad enterprise collaboration
-- billing, monetization implementation, or App Store distribution
-- speculative benchmarking systems beyond the bounded compare-ready model
+- marking this phase complete
+- shipping this phase as the active implementation step
+- changing unrelated auth, env, or sidecar surfaces
 
 ## Tasks
 
-- add additive validator or critic fields for confidence and risk only where structured data supports them
-- instrument activation, run-success, approval, rerun, and compare-related metrics at the product surface
-- add an approval inbox section to the dashboard once approval actions are stable
-- add suggested next actions only from explicit run state, not opaque heuristic text generation
-- align `README.md`, `docs/architecture.md`, and `docs/github-copilot.md` with the differentiated product model
+- mark the phase blocked in release metadata
+- move the actual implementation work into a smaller bounded next phase
+- keep the workflow source of truth aligned to the new active phase
 
 ## Validation command
 
-`python -m compileall apps/api/app && (cd apps/web && npm run build)`
+`bash scripts/dev/workflow-check.sh`
 
 ## Validation
 
-Status: pending
+Status: FAIL
 Evidence:
-- not run yet
+- The repo audit found missing dashboard components and missing structured schema fields required by this phase.
+- The original phase scope was too broad for a clean, bounded implementation pass.
 Blockers:
-- not validated yet
+- `apps/web/components/approval-inbox.tsx` does not exist yet.
+- `apps/web/components/suggested-next-actions.tsx` does not exist yet.
+- Grounded confidence, risk, and product-metrics schema support is not fully implemented yet.
 Ready to ship:
 - no
 
 ## Acceptance criteria
 
-- role-specific output quality is improved through explicit schema or prompt changes, not only copy changes
-- the product records at least the core activation, run-success, and approval metrics named in the PRD
-- returning users can see pending approvals or suggested next steps on the dashboard
-- risk or confidence indicators are grounded in structured run data rather than generic prose
-- product docs describe the platform as an execution console with review and approval loops, not a raw prompt runner
+- This phase is explicitly recorded as blocked rather than silently skipped.
+- The next active phase is narrower and executable.
+- Workflow metadata points agents at the bounded follow-up phase instead of the oversized original phase.
 
 ## Release notes
 
-- pending
+- Phase 10 was blocked and superseded by a narrower follow-up execution phase.
 
 ## Completion summary
 
-- pending
+- The original Phase 10 scope remains historically documented, but it is not the active phase and must not be treated as complete.
